@@ -1,2 +1,6 @@
-*.class
-*.log
+dist/
+log/
+
+# sbt
+target/
+.bsp/

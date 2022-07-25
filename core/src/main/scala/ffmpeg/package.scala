@@ -19,8 +19,10 @@ package object ffmpeg {
     def apply(name: String): SimpleLogContext = SimpleLogContext(name, name)
   }
 
-  // https://github.com/openjdk/jdk17u/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L198
   // Throwable(message) leaves cause == this
+  // https://github.com/openjdk/jdk17u/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L198
+  // thus we cannot say `class FFmpegException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)`
+  // to remain compatible
   class FFmpegException(message: String) extends RuntimeException(message)
   object FFmpegException {
     def apply(message: String, cause: Throwable): FFmpegException = {

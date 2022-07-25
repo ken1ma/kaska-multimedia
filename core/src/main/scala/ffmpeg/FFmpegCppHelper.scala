@@ -14,6 +14,7 @@ object FFmpegCppHelper {
       ret
     }
 
+/*
     def throwWhen(pred: Int => Boolean, msg: String, log: Logger): Int = {
       if (pred(ret)) {
         log.error(s"$msg ($ret)") // output the return value for easier troubleshooting
@@ -21,5 +22,6 @@ object FFmpegCppHelper {
       }
       ret
     }
+*/
   }
 }

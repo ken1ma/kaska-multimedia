@@ -29,7 +29,7 @@ object ToolOptions:
     Opts(Version())
   }
 
-  val command = Command(s"java -jar kaska-multimedia-tool-assembly-${BuildInfo.version}.jar", "Appends/verifies signatures") {
+  val command = Command(s"java -jar kaska-multimedia-tool-assembly-${BuildInfo.version}.jar", "Various operaions on media files") {
     transcode orElse version
   }
 
@@ -39,5 +39,5 @@ object ToolOptions:
     command.parse(args) match
       case Right(command) => Some(command)
       case Left(help) =>
-        Console.err.println(help.toString.replace("--", "-"))
+        Console.err.println(help.toString)
         None

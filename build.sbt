@@ -42,8 +42,8 @@ lazy val core = (project in file("core"))
       "org.bytedeco" % "ffmpeg-platform" % "5.0-1.5.7",
 
       //"org.typelevel" %% "cats-effect" % "3.3.12", // IO monad
-      "com.github.rssh" %% "cps-async-connect-cats-effect" % "0.9.8", // https://github.com/rssh/cps-async-connect since it seems well-maintained than https://typelevel.org/cats-effect/docs/std/async-await
-      "co.fs2" %% "fs2-core" % "3.2.7",
+      "com.github.rssh" %% "cps-async-connect-cats-effect" % "0.9.10", // https://github.com/rssh/cps-async-connect since it seems well-maintained than https://typelevel.org/cats-effect/docs/std/async-await
+      "co.fs2" %% "fs2-core" % "3.2.10",
 
       "org.log4s" %% "log4s" % "1.10.0", // log api
     ),
@@ -56,8 +56,8 @@ lazy val tool = (project in file("tool"))
     commonSettings,
     buildInfoSettings,
     libraryDependencies ++= Seq(
-      "com.monovore" %% "decline" % "2.2.0", // command line parser
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.17.2" % Runtime, // log implementation
+      "com.monovore" %% "decline" % "2.3.0", // command line parser
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
     ),
     buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
   ).dependsOn(core % "compile->compile; runtime->runtime")

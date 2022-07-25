@@ -64,4 +64,3 @@ Start `sbt`
 4. Show the dependencies
 
         dependencyTree
-

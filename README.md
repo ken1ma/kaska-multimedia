@@ -8,7 +8,7 @@
 
 In addition to the runtime environment
 
-1. [SBT](https://www.scala-sbt.org/) 1.6.2
+1. [SBT](https://www.scala-sbt.org/) 1.7.1
 
 	1. On macOS, [SDKMAN!](https://sdkman.io/) can be used to install one
 

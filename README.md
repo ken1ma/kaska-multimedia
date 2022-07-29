@@ -39,11 +39,11 @@ Start `sbt`
 
 2. Build the fat jar for distribution
 
-		dist
+		tool/assembly
 
 	1. To run locally
 
-			java -jar dist/kaska-multimedia-0.1.0.jar
+			java -jar tool/target/scala-3.1.3/tool-assembly-0.1.0.jar
 
 
 ## More SBT commands

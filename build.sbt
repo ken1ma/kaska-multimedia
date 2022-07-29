@@ -15,6 +15,7 @@ lazy val commonSettings = Seq(
     case PathList("META-INF", "versions", _, "module-info.class") => MergeStrategy.discard
     case PathList("META-INF", "native-image", _, "jnijavacpp", "jni-config.json") => MergeStrategy.first
     case PathList("META-INF", "native-image", _, "jnijavacpp", "reflect-config.json") => MergeStrategy.first
+    case x => (ThisBuild / assemblyMergeStrategy).value(x)
   },
   // prepend the project name in the assembly jar name
   assembly / assemblyJarName := s"${(assembly / assemblyJarName).value}",

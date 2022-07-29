@@ -12,12 +12,18 @@ object ToolOptions:
   val log = getLogger
 
   object Commands:
+    case class Play(in: Path)
     case class Transcode(out: Path, in: Path)
     case class Version()
   import Commands._
 
   val out = Opts.option[Path]("out", metavar = "path", help = "Output video/image/audio path")
   val in = Opts.option[Path]("in", metavar = "path", help = "Input video/image/audio path")
+
+  val play = Opts.subcommand("play",
+      "Play video/image/audio file") {
+    in.map(Commands.Play.apply)
+  }
 
   val transcode = Opts.subcommand("transcode",
       "Transcode video/image/audio files") {
@@ -30,7 +36,7 @@ object ToolOptions:
   }
 
   val command = Command(s"java -jar kaska-multimedia-tool-assembly-${BuildInfo.version}.jar", "Various operaions on media files") {
-    transcode orElse version
+    play orElse transcode orElse version
   }
 
   def parse(args: List[String]) =

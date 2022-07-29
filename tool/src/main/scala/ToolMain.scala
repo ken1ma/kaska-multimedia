@@ -2,11 +2,14 @@ package jp.ken1ma.kaska.multimedia
 package tool
 
 import cats.effect.{IO, IOApp, ExitCode}
-import cps.{async, await}
+import cps.async
 import cps.monads.catsEffect.given
 import org.log4s.getLogger
 
+import jp.ken1ma.kaska.multimedia.core._ // await
+
 //import core.Transcode
+import command._
 
 object ToolMain extends IOApp:
   val log = getLogger
@@ -23,7 +26,11 @@ object ToolMain extends IOApp:
         // TODO log the JVM and OS
 
         command match
-          case Transcode(out, ins) =>
+          case Play(in) =>
+            PlayCommand[F].run(in).await
+            ExitCode.Success
+
+          case Transcode(out, in) =>
             println(s"out = $out")
             ExitCode.Success
 

@@ -2,7 +2,7 @@
 
 1. macOS / Linux / Windows
 
-1. Java 17/11 LTS
+2. Java 17/11 LTS
 
     1. On macOS, [SDKMAN!](https://sdkman.io/) can be used to install one
 
@@ -19,7 +19,7 @@ In addition to the runtime environment
 
 			sdk install sbt
 
-    1. On Windows [MSI installer](https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Windows.html)
+    2. On Windows [MSI installer](https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Windows.html)
         1. It might be older version but the correct version is automatically downloaded and used
 
 
@@ -29,7 +29,7 @@ In addition to the runtime environment
 
 Start `sbt`
 
-2. Build and run the tool
+1. Build and run the tool
 
 		tool/run
 
@@ -37,11 +37,11 @@ Start `sbt`
 
             tool/run verify -in ../evip/out/ESA.pdf
 
-4. Build the fat jar for distribution
+2. Build the fat jar for distribution
 
 		dist
 
-	2. To run locally
+	1. To run locally
 
 			java -jar dist/kaska-multimedia-0.1.0.jar
 

@@ -1,7 +1,12 @@
 ## Runtime environment
 
-1. Java 17/11 LTS
 1. macOS / Linux / Windows
+
+1. Java 17/11 LTS
+
+    1. On macOS, [SDKMAN!](https://sdkman.io/) can be used to install one
+
+            sdk install java 17.0.4-amzn
 
 
 ## Build environment
@@ -16,12 +21,6 @@ In addition to the runtime environment
 
     1. On Windows [MSI installer](https://www.scala-sbt.org/1.x/docs/Installing-sbt-on-Windows.html)
         1. It might be older version but the correct version is automatically downloaded and used
-
-1. Java 17
-
-    1. On macOS, [SDKMAN!](https://sdkman.io/) can be used to install one
-
-            sdk install java 17.0.3.6.1-amzn
 
 
 # How to build and run

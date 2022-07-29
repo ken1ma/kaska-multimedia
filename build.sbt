@@ -39,8 +39,8 @@ lazy val core = (project in file("core"))
     buildInfoSettings,
     libraryDependencies ++= Seq(
       // https://github.com/bytedeco/javacpp-presets
-      // https://mvnrepository.com/artifact/org.bytedeco/ffmpeg
-      "org.bytedeco" % "ffmpeg-platform" % "5.0-1.5.7",
+      // https://github.com/bytedeco/sbt-javacpp could be used to select the binaries for the platform
+      "org.bytedeco" % "ffmpeg-platform" % "5.0-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/ffmpeg
 
       //"org.typelevel" %% "cats-effect" % "3.3.12", // IO monad
       "com.github.rssh" %% "cps-async-connect-cats-effect" % "0.9.10", // https://github.com/rssh/cps-async-connect since it seems well-maintained than https://typelevel.org/cats-effect/docs/std/async-await
@@ -58,9 +58,12 @@ lazy val tool = (project in file("tool"))
     buildInfoSettings,
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "2.3.0", // command line parser
+      "org.bytedeco" % "skia-platform" % "2.80.3-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/skia
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
     ),
     buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
+
+    fork := true,
   ).dependsOn(core % "compile->compile; runtime->runtime")
 
 // customize SBT

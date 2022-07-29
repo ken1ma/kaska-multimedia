@@ -2,7 +2,7 @@
 lazy val commonSettings = Seq(
   version := "0.1.0",
 
-  scalaVersion := "3.1.2",
+  scalaVersion := "3.1.3",
   scalacOptions ++= Seq(
     // the default settings from https://scastie.scala-lang.org
     "-encoding", "UTF-8",

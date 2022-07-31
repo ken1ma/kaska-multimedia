@@ -26,12 +26,12 @@ object ToolMain extends IOApp:
         // TODO log the JVM and OS
 
         command match
-          case Play(in) =>
-            PlayCommand[F].run(in).await
+          case Run(exprs, vals, in, out, opts) =>
+            RunCommand[F].run(exprs, vals, in, out, opts).await
             ExitCode.Success
 
-          case Transcode(out, in) =>
-            println(s"out = $out")
+          case Play(in) =>
+            PlayCommand[F].run(in).await
             ExitCode.Success
 
           case Version() =>

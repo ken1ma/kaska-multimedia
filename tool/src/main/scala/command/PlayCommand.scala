@@ -14,7 +14,8 @@ import org.bytedeco.skia._
 import org.bytedeco.skia.global.Skia._
 
 class PlayCommand[F[_]: Async]:
-  def run(inFile: Path): F[Unit] = async[F] {
+  def run(in: String): F[Unit] = async[F] {
+    val inFile = Path.of(in) // TODO supports https
     println(s"inFile = $inFile")
 
     // based on https://github.com/bytedeco/javacpp-presets/tree/master/skia

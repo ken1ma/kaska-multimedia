@@ -58,6 +58,7 @@ lazy val tool = (project in file("tool"))
     buildInfoSettings,
     libraryDependencies ++= Seq(
       "com.monovore" %% "decline" % "2.3.0", // command line parser
+      "org.scala-lang" %% "scala3-staging" % scalaVersion.value,
       "org.bytedeco" % "skia-platform" % "2.80.3-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/skia
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
     ),

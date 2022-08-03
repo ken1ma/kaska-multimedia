@@ -4,14 +4,17 @@ package command
 
 import java.nio.file.Path
 
+import cats.syntax.all._
 import cats.effect.Async
-import cps.{async, await}
+import cps.async
 import cps.monads.catsEffect.given
+import fs2.Stream
 import org.log4s.getLogger
 
 import org.bytedeco.javacpp._
 import org.bytedeco.skia._
-import org.bytedeco.skia.global.Skia._
+
+import jp.ken1ma.kaska.multimedia.core._ // await
 
 import ToolOptions.Commands.RunOpts
 
@@ -37,6 +40,8 @@ class RunCommand[F[_]: Async]:
     import cats.effect._
     import cats.effect.syntax._
     import fs2._
+
+    import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
     import jp.ken1ma.ffmpeg.FFmpegStream
     val ffmpegStream = FFmpegStream[IO]
@@ -66,6 +71,8 @@ class RunCommand[F[_]: Async]:
     // https://github.com/lampepfl/dotty/blob/main/compiler/src/dotty/tools/repl/ReplDriver.scala
     // https://github.com/lampepfl/dotty/blob/main/compiler/src/dotty/tools/repl/ScriptEngine.scala
     // "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
+/*
+    // This causes `ClassNotFoundException: rs$line$1`
     import dotty.tools.repl.ReplDriver
     val driver = ReplDriver(Array(
         "-classpath", "", // Avoid the default "."
@@ -73,7 +80,28 @@ class RunCommand[F[_]: Async]:
         //  dotty.tools.dotc.MissingCoreLibraryException: Could not find package scala from compiler core libraries.
         //  Make sure the compiler core libraries are on the classpath.
         "-usejavacp")) 
+
+    val classLoader = getClass.getClassLoader
+    import dotty.tools.dotc.core.StdNames.str.{REPL_SESSION_LINE, REPL_RES_PREFIX}
+    val vid = driver.initialState.valIndex
+
     val state = driver.run(s"$imports\n$script")(driver.initialState)
+
+    val oid = state.objectIndex
+    val result = Class.forName(s"$REPL_SESSION_LINE$oid", true, classLoader)
+        .getDeclaredMethods.find(_.getName == s"$REPL_RES_PREFIX$vid")
+        .map(_.invoke(null))
+        .getOrElse(null)
+*/
+
+    import dotty.tools.repl.ScriptEngine
+    val scriptEngine = new ScriptEngine
+    val stream = scriptEngine.eval(s"$imports\n$script", null) // context is not being used in ScriptEngine
+    val f = stream match
+      case stream: Stream[F @unchecked, _] => stream.compile.drain
+      case f: F[_] @unchecked => f.void
+      case result => throw Exception(s"result is of type ${Option(result).map(_.getClass.getName).orNull}")
+    f.await
 
     // TODO opts.showScalaFull
   }

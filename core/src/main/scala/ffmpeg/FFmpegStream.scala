@@ -27,10 +27,15 @@ import jp.ken1ma.kaska.multimedia.core._ // await
 
 import FFmpegCppHelper._
 
-class FFmpegStream[F[_]: Async]:
+object FFmpegStream:
   val log = getLogger
 
-  def streamVideoFramesFrom(file: Path): Stream[F, (AVFrame, AVStream)] =
+  case class Frame(frame: AVFrame, stream: AVStream)
+
+class FFmpegStream[F[_]: Async]:
+  import FFmpegStream._
+
+  def streamVideoFramesFrom(file: Path): Stream[F, Frame] =
     log.info(s"streaming video: $file")
 
     val F = Async[F]
@@ -95,7 +100,7 @@ class FFmpegStream[F[_]: Async]:
                   // frm.display_picture_number seems to be always 0 for H264
                   // but avcodec_receive_frame seems to return frames in the display order (as seen in pkt_pts)
 
-                  Stream.emit((frm, stream))
+                  Stream.emit(Frame(frm, stream))
 
             } else {
               av_packet_unref(pkt)
@@ -105,11 +110,11 @@ class FFmpegStream[F[_]: Async]:
 
           // insert waits based on pts
           // ffmpeg-platform 5.0-1.5.7: frm.time_base is always 0/1 but stream.time_base is set
-          unmetered.mapAccumulate(Option.empty[Long]) { case (firstTimeOpt, (frm, stream)) =>
+          unmetered.mapAccumulate(Option.empty[Long]) { case (firstTimeOpt, Frame(frm, stream)) =>
             val currentTime = System.currentTimeMillis
             firstTimeOpt match
               case None =>
-                (Some(currentTime), (None, (frm, stream)))
+                (Some(currentTime), (None, Frame(frm, stream)))
 
               case Some(firstTime) =>
                 val ptsDiff = frm.pts - stream.start_time
@@ -117,7 +122,7 @@ class FFmpegStream[F[_]: Async]:
 
                 val elapsedTime = currentTime - firstTime
                 //log.debug(s"elapsedTime = $elapsedTime, ptsDiffMs = $ptsDiffMs (${frm.pts}, ${frm.time_base.num} / ${frm.time_base.den}) (${stream.start_time}, ${stream.time_base.num} / ${stream.time_base.den})")
-                (Some(firstTime), (Option.when(elapsedTime < ptsDiffMs)(ptsDiffMs - elapsedTime), (frm, stream)))
+                (Some(firstTime), (Option.when(elapsedTime < ptsDiffMs)(ptsDiffMs - elapsedTime), Frame(frm, stream)))
 
           }.flatMap { case (_, (delayOpt, elem)) =>
             delayOpt match

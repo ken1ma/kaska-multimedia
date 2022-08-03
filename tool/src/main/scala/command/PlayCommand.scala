@@ -5,7 +5,7 @@ package command
 import java.nio.file.Path
 
 import cats.effect.Async
-import cps.{async, await}
+import cps.async
 import cps.monads.catsEffect.given
 import org.log4s.getLogger
 

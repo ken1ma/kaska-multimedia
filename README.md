@@ -86,7 +86,7 @@ The program to run is constructed in by
 
 1. Extract key frames from a video file
 
-		tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/${in.baseName}-keyFrames/$pts.jpeg" -d "write=JpegWriter(out)" -e "streamVideoFramesFrom(in).filter(_.keyFrame).flatMap(write)"
+		tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/${in.baseName}-keyFrames/pts.jpeg" -d "write=JpegWriter(out)" -e "streamVideoFramesFrom(in).filter(_.frame.keyFrame).flatMap(write)"
 
 
 ## More SBT commands

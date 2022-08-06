@@ -6,7 +6,7 @@ import cps.async
 import cps.monads.catsEffect.given
 import org.log4s.getLogger
 
-import jp.ken1ma.kaska.multimedia.core._ // await
+import jp.ken1ma.kaska.Cps.syntax._ // await
 
 //import core.Transcode
 import command._

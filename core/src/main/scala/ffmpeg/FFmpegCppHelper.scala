@@ -1,4 +1,5 @@
-package jp.ken1ma.ffmpeg
+package jp.ken1ma.kaska.multimedia
+package Ffmpeg
 
 import java.nio.file.Path
 

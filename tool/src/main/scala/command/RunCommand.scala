@@ -14,7 +14,7 @@ import org.log4s.getLogger
 import org.bytedeco.javacpp._
 import org.bytedeco.skia._
 
-import jp.ken1ma.kaska.multimedia.core._ // await
+import jp.ken1ma.kaska.Cps.syntax._ // await
 
 import ToolOptions.Commands.RunOpts
 
@@ -43,7 +43,7 @@ class RunCommand[F[_]: Async]:
 
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
-    import jp.ken1ma.ffmpeg.FFmpegStream
+    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegStream
     val ffmpegStream = FFmpegStream[IO]
     import ffmpegStream._
   """

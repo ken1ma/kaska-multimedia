@@ -25,12 +25,28 @@ lazy val buildInfoSettings = Seq(
   buildInfoKeys := Seq[BuildInfoKey](version),
   buildInfoOptions ++= Seq(
     BuildInfoOption.BuildTime,
-    BuildInfoOption.Traits("jp.ken1ma.kaska.multimedia.core.BuildInfoHelper"),
+    BuildInfoOption.Traits("jp.ken1ma.kaska.BuildInfoHelper"),
   )
 )
 
 lazy val root = (project in file("."))
-  .aggregate(core, tool)
+  .aggregate(tool, core)
+
+lazy val tool = (project in file("tool"))
+  .enablePlugins(BuildInfoPlugin)
+  .settings(
+    commonSettings,
+    buildInfoSettings,
+    libraryDependencies ++= Seq(
+      "com.monovore" %% "decline" % "2.3.0", // command line parser
+      "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
+      "org.bytedeco" % "skia-platform" % "2.80.3-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/skia
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
+    ),
+    buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
+
+    fork := true,
+  ).dependsOn(core /*% "compile->compile; runtime->runtime"*/)
 
 lazy val core = (project in file("core"))
   .enablePlugins(BuildInfoPlugin)
@@ -48,24 +64,8 @@ lazy val core = (project in file("core"))
 
       "org.log4s" %% "log4s" % "1.10.0", // log api
     ),
-    buildInfoPackage := "jp.ken1ma.kaska.multimedia.core",
+    buildInfoPackage := "jp.ken1ma.kaska.multimedia",
   )
-
-lazy val tool = (project in file("tool"))
-  .enablePlugins(BuildInfoPlugin)
-  .settings(
-    commonSettings,
-    buildInfoSettings,
-    libraryDependencies ++= Seq(
-      "com.monovore" %% "decline" % "2.3.0", // command line parser
-      "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
-      "org.bytedeco" % "skia-platform" % "2.80.3-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/skia
-      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
-    ),
-    buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
-
-    fork := true,
-  ).dependsOn(core % "compile->compile; runtime->runtime")
 
 // customize SBT
 Global / onChangedBuildSource := ReloadOnSourceChanges // reload build.sbt automatically

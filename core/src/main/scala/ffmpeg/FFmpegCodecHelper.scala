@@ -1,4 +1,5 @@
-package jp.ken1ma.ffmpeg
+package jp.ken1ma.kaska.multimedia
+package Ffmpeg
 
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters}
 import org.bytedeco.ffmpeg.global.avcodec._

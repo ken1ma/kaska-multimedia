@@ -1,4 +1,5 @@
-package jp.ken1ma.ffmpeg
+package jp.ken1ma.kaska.multimedia
+package Ffmpeg
 
 import scala.util.Using
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
@@ -7,7 +8,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 import cats.syntax.all._
 import cats.effect._
-import cps.{async, await}
+import cps.async
 import cps.monads.catsEffect.given
 import fs2.Stream
 
@@ -22,7 +23,7 @@ import org.bytedeco.ffmpeg.global.avutil._
 
 import org.log4s.getLogger
 
-import jp.ken1ma.kaska.multimedia.core._ // await
+import jp.ken1ma.kaska.Cps.syntax._ // await
 
 import FFmpegCppHelper._
 

@@ -1,5 +1,4 @@
-package jp.ken1ma.kaska.multimedia
-package core
+package jp.ken1ma.kaska
 
 import java.time.{Instant, ZoneId}
 import java.time.temporal.ChronoUnit.MINUTES

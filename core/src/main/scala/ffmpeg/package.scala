@@ -1,6 +1,6 @@
-package jp.ken1ma
+package jp.ken1ma.kaska.multimedia
 
-package object ffmpeg {
+package object Ffmpeg {
   trait LogContext {
     def logName: String
 

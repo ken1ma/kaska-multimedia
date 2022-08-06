@@ -3,7 +3,7 @@ package Ffmpeg
 
 import scala.util.Using
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
-import java.nio.file.Path
+import java.nio.file.{Path, Files}
 import java.nio.charset.StandardCharsets.UTF_8
 
 import cats.syntax.all._
@@ -36,7 +36,7 @@ class FFmpegStream[F[_]: Async]:
   import FFmpegStream._
 
   def streamVideoFramesFrom(file: Path): Stream[F, Frame] =
-    log.info(s"streaming video: $file")
+    log.info(f"streaming video: $file (${Files.size(file) / 1024.0 / 1024}%,.1fMB)")
 
     val F = Async[F]
 

@@ -43,6 +43,8 @@ class RunCommand[F[_]: Async]:
 
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
+    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegFormatHelper.FormatContext._
+    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegCodecHelper._
     import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegStream
     val ffmpegStream = FFmpegStream[IO]
     import ffmpegStream._
@@ -100,6 +102,7 @@ class RunCommand[F[_]: Async]:
     val f = stream match
       case stream: Stream[F @unchecked, _] => stream.compile.drain
       //case f: F[_] @unchecked => f.void
+      case null => Async[F].unit // when there are no expressions (only vals)
       case result => throw Exception(s"result is of type ${Option(result).map(_.getClass.getName).orNull}")
     f.await
 

@@ -21,7 +21,7 @@ object ToolOptions:
   import Commands._
 
   val exprs = Opts.options[String]("expr", short = "e", metavar = "expression", help = "Evaluates the expression")
-  val vals  = Opts.options[String]("val" , short = "v", metavar = "name=value", help = "Defines a value")
+  val vals  = Opts.options[String]("val" ,              metavar = "name=value", help = "Defines a value")
   val in    = Opts.option [String]("in"  , short = "i", metavar = "path"      , help = "Defines a value `in` for the input path")
   val out   = Opts.option [String]("out" , short = "o", metavar = "path"      , help = "Defines a value `out` for the output path")
 

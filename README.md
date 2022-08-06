@@ -81,6 +81,10 @@ The program to run is constructed in by
 
 ## Examples
 
+1. Show the PTS
+
+        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" --val "format = openForRead(in, dump = true)" --show-scala
+
 1. Transcode wav to aac
 
 

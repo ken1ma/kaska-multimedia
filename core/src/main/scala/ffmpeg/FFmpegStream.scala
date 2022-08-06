@@ -1,6 +1,5 @@
 package jp.ken1ma.ffmpeg
 
-
 import scala.util.Using
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 import java.nio.file.Path
@@ -65,7 +64,7 @@ class FFmpegStream[F[_]: Async]:
             .flatMap { decodeCtx =>
           import decodeCtx.{pkt, frm}
 
-          val unmetered = Stream.fromBlockingIterator(Iterator.continually {
+          /*val unmetered =*/ Stream.fromBlockingIterator(Iterator.continually {
             av_read_frame(fmt_ctx, pkt) // returned packet is reference-counted
           }.takeWhile(_ >= 0), chunkSize = 1).flatMap { _ =>
             if (pkt.stream_index == streamIndex) {
@@ -108,6 +107,7 @@ class FFmpegStream[F[_]: Async]:
             }
           }
 
+/*
           // insert waits based on pts
           // ffmpeg-platform 5.0-1.5.7: frm.time_base is always 0/1 but stream.time_base is set
           unmetered.mapAccumulate(Option.empty[Long]) { case (firstTimeOpt, Frame(frm, stream)) =>
@@ -129,6 +129,7 @@ class FFmpegStream[F[_]: Async]:
               case Some(delay) => Stream.emit(elem).delayBy(FiniteDuration(delay, MILLISECONDS))
               case None        => Stream.emit(elem)
           }
+*/
         }
       }
     }

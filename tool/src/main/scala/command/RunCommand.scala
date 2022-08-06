@@ -96,10 +96,10 @@ class RunCommand[F[_]: Async]:
 
     import dotty.tools.repl.ScriptEngine
     val scriptEngine = new ScriptEngine
-    val stream = scriptEngine.eval(s"$imports\n$script", null) // context is not being used in ScriptEngine
+    val stream = scriptEngine.eval(s"$imports\n$script", null) // context (2nd argument) is not being used in ScriptEngine
     val f = stream match
       case stream: Stream[F @unchecked, _] => stream.compile.drain
-      case f: F[_] @unchecked => f.void
+      //case f: F[_] @unchecked => f.void
       case result => throw Exception(s"result is of type ${Option(result).map(_.getClass.getName).orNull}")
     f.await
 

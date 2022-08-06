@@ -28,7 +28,7 @@ class RunCommand[F[_]: Async]:
     def toExpr(text: String): String =
       text.indexOf('=') match
         case -1 => throw new IllegalArgumentException(s"Must contains '=': $text")
-        case eq => s"val ${text.take(eq).trim} = ${text.drop(eq + 1).trim}"
+        case eq => s"val `${text.take(eq).trim}` = ${text.drop(eq + 1).trim}"
     run(vals.map(toExpr) ++ exprs, opts)
 
   val imports = """

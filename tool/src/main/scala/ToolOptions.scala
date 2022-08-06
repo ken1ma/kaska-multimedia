@@ -20,10 +20,10 @@ object ToolOptions:
     case class Version()
   import Commands._
 
-  val exprs = Opts.options[String]("exression" , short = "e", metavar = "expression", help = "Evaluates the exression")
-  val vals  = Opts.options[String]("definition", short = "d", metavar = "name=value", help = "Defines a value")
-  val in    = Opts.option [String]("in"        , short = "i", metavar = "path"      , help = "Defines a value for the input file")
-  val out   = Opts.option [String]("out"       , short = "o", metavar = "path"      , help = "Defines a value for the output file")
+  val exprs = Opts.options[String]("expr", short = "e", metavar = "expression", help = "Evaluates the expression")
+  val vals  = Opts.options[String]("val" , short = "v", metavar = "name=value", help = "Defines a value")
+  val in    = Opts.option [String]("in"  , short = "i", metavar = "path"      , help = "Defines a value `in` for the input path")
+  val out   = Opts.option [String]("out" , short = "o", metavar = "path"      , help = "Defines a value `out` for the output path")
 
   val showScala     = Opts.flags("show-scala"     , help = "Shows the Scala code"     ).withDefault(0).map(_ > 0)
   val showScalaFull = Opts.flags("show-scala-full", help = "Shows the full Scala code").withDefault(0).map(_ > 0)

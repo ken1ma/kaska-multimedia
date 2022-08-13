@@ -98,12 +98,16 @@ class RunCommand[F[_]: Async]:
 
     import dotty.tools.repl.ScriptEngine
     val scriptEngine = new ScriptEngine
-    val stream = scriptEngine.eval(s"$imports\n$script", null) // context (2nd argument) is not being used in ScriptEngine
-    val f = stream match
+    val result = scriptEngine.eval(s"$imports\n$script", null) // context (2nd argument) is not being used in ScriptEngine
+    val f = result match
       case stream: Stream[F @unchecked, _] => stream.compile.drain
       //case f: F[_] @unchecked => f.void
-      case null => Async[F].unit // when there are no expressions (only vals)
-      case result => throw Exception(s"result is of type ${Option(result).map(_.getClass.getName).orNull}")
+      case null => // null when there are no expressions (only vals)
+         println(s"No result (null)") // specific message because this is a common mistake
+         Async[F].unit
+      case result =>
+         println(s"The result is $result: ${result.getClass.getName}")
+         Async[F].unit
     f.await
 
     // TODO opts.showScalaFull

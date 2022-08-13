@@ -18,7 +18,6 @@ import org.bytedeco.ffmpeg.avutil.{AVFrame, AVRational}
 
 import org.bytedeco.ffmpeg.global.avformat._
 import org.bytedeco.ffmpeg.global.avcodec._
-import org.bytedeco.ffmpeg.global.swscale._
 import org.bytedeco.ffmpeg.global.avutil._
 
 import org.log4s.getLogger
@@ -35,10 +34,13 @@ object FFmpegStream:
 class FFmpegStream[F[_]: Async]:
   import FFmpegStream._
 
+  val F = Async[F]
+
+  def streamFramesFrom(stream: AVStream): Stream[F, AVFrame] =
+    ???
+
   def streamVideoFramesFrom(file: Path): Stream[F, Frame] =
     log.info(f"streaming video: $file (${Files.size(file) / 1024.0 / 1024}%,.1fMB)")
-
-    val F = Async[F]
 
     // open the file
     import FFmpegFormatHelper.FormatContext

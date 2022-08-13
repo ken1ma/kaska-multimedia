@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets.UTF_8
 import org.bytedeco.ffmpeg.avformat.{AVFormatContext, AVStream, AVInputFormat}
 import org.bytedeco.ffmpeg.avutil.AVDictionary
 import org.bytedeco.ffmpeg.global.avformat._
+import org.bytedeco.ffmpeg.global.avutil._
 import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger
 
@@ -21,7 +22,14 @@ object FFmpegFormatHelper {
     fmt_ctx: AVFormatContext,
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
-    def streams: Seq[AVStream] = (0 until fmt_ctx.nb_streams).map(fmt_ctx.streams(_))
+    val streams: Seq[AVStream] = (0 until fmt_ctx.nb_streams).map(fmt_ctx.streams(_))
+
+    def firstVideoStream: AVStream = streams.find(_.codecpar.codec_type == AVMEDIA_TYPE_VIDEO).getOrElse {
+      throw new FFmpegException(s"${logCtx.msgName}: There is no video stream")
+    }
+    def firstAudioStream: AVStream = streams.find(_.codecpar.codec_type == AVMEDIA_TYPE_AUDIO).getOrElse {
+      throw new FFmpegException(s"${logCtx.msgName}: There is no audio stream")
+    }
 
     /** @return stream and index */
     def selectStream(pred: AVStream => Boolean): (AVStream, Int) = {
@@ -46,6 +54,7 @@ object FFmpegFormatHelper {
   object FormatContext {
     /** @param fmt autodetected when null */
     def openForRead(file: Path, fmt: AVInputFormat = null, options: AVDictionary = null, dump: Boolean = false): FormatContext = {
+      log.debug(s"opening $file")
       val logCtx1 = SimpleLogContext(file.toAbsolutePath.toString, file.getFileName.toString)
 
       val fmt_ctx = avformat_alloc_context()

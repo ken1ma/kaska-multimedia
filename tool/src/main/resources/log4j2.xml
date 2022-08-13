@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  The console log is to be sent to CloudWatch.
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %mdc %logger - %msg%n" charset="UTF-8"/>
+    </Console>
+
+    <Console name="ConsoleApp" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %mdc %logger{1} - %msg%n" charset="UTF-8"/>
+    </Console>
+  </Appenders>
+
+  <Loggers>
+    <Root level="DEBUG">
+      <AppenderRef ref="Console"/>
+    </Root>
+
+    <Logger name="jp.ken1ma" additivity="false">
+      <AppenderRef ref="ConsoleApp"/>
+    </Logger>
+
+    <!-- too verbose -->
+    <Logger name="org.http4s.client" level="warn"/> <!-- "Shutting down connection pool" is logged in info level -->
+  </Loggers>
+
+</Configuration>

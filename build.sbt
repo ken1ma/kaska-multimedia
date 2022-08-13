@@ -60,9 +60,10 @@ lazy val core = (project in file("core"))
 
       //"org.typelevel" %% "cats-effect" % "3.3.12", // IO monad
       "com.github.rssh" %% "cps-async-connect-cats-effect" % "0.9.10", // https://github.com/rssh/cps-async-connect since it seems well-maintained than https://typelevel.org/cats-effect/docs/std/async-await
-      "co.fs2" %% "fs2-core" % "3.2.11",
+      "co.fs2" %% "fs2-core" % "3.2.12",
 
       "org.log4s" %% "log4s" % "1.10.0", // log api
+      "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.17.2" % Runtime, // log impl
     ),
     buildInfoPackage := "jp.ken1ma.kaska.multimedia",
   )

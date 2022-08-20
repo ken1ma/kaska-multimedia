@@ -4,9 +4,14 @@ package command
 
 import java.nio.file.Path
 
+import org.bytedeco.ffmpeg.avformat.AVStream
 import org.bytedeco.ffmpeg.avutil.AVFrame
 
 object RunHelper:
+  extension (stream: AVStream)
+    def width: Int = stream.codecpar.width
+    def height: Int = stream.codecpar.height
+
   extension (frm: AVFrame)
     def keyFrame: Boolean = frm.key_frame == 1
 

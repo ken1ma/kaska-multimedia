@@ -48,7 +48,7 @@ Start `sbt`
 
 ## The program
 
-The program to run is constructed in by
+The program to run is constructed by
 
 1. The following imports are inserted at the beginning
 
@@ -67,27 +67,30 @@ The program to run is constructed in by
 
 2. `-i` and `-o` are translated into value definitions
 
-    1. `--in=text` will be `--val:in=Path.of(s"$text")`
-    1. `--out=text` will be `--val:out=Path.of(s"$text")`
+    1. `--in=text` will be `in = Path.of(s"$text")`
+    1. `--out=text` will be `out = Path.of(s"$text")`
 
-3. The value definitions are appended in the given order after the imports
+3. `-e` is is a raw Scala expression, except
 
-    1. `--val=name=value` will be `val name = value`
+    1. `name = value` becomes `val name = value`
+        1. When it starts with `name =`, `val ` is inserted at the beginning
 
-4. The expressions are appended after the values
+    1. TODO: expr { name =>
 
-    1. Multiple expressions will be connected by `flatMap`
+    1. TODO: Multiple expressions will be connected by `flatMap`?
 
 
 ## Examples
 
-1. Show the PTS
+1. Extract key frames as JPEG file
 
-        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" --val "format = openForRead(in, dump = true)" --show-scala
+        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "fmtCtx = openForRead(in, dump = true)" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
 
-        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "$HOME/Documents/convivial/Moomin.aac" -e "val format = openForRead(in, dump = true)" -e "val stream = format.firstAudioStream" --show-scala
+    1. TODO: interpolate the output path
 
 1. Transcode wav to aac
+
+        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "$HOME/Documents/convivial/Moomin.aac" -e "fmtCtx = openForRead(in, dump = true)" -e "stream = fmtCtx.firstAudioStream" -e "frames = streamFrames(stream, fmtCtx)"
 
 
 1. Extract key frames from a video file

@@ -1,6 +1,7 @@
 package jp.ken1ma.kaska.multimedia
 
 package object Ffmpeg {
+  // The logs have hierarchical name such as `file (codec): ...`
   trait LogContext {
     def logName: String
 

@@ -11,7 +11,7 @@ object ToolOptions:
   val log = getLogger
 
   object Commands:
-    case class Run(exprs: Seq[String], vals: Seq[String], in: Option[String], out: Option[String], opts: RunOpts)
+    case class Run(exprs: Seq[String], in: Option[String], out: Option[String], opts: RunOpts)
     case class RunOpts(
       showScala: Boolean,
       showScalaFull: Boolean,
@@ -21,7 +21,6 @@ object ToolOptions:
   import Commands._
 
   val exprs = Opts.options[String]("expr", short = "e", metavar = "expression", help = "Evaluates the expression")
-  val vals  = Opts.options[String]("val" ,              metavar = "name=value", help = "Defines a value")
   val in    = Opts.option [String]("in"  , short = "i", metavar = "path"      , help = "Defines a value `in` for the input path")
   val out   = Opts.option [String]("out" , short = "o", metavar = "path"      , help = "Defines a value `out` for the output path")
 
@@ -30,7 +29,7 @@ object ToolOptions:
 
   val run = Opts.subcommand("run",
       "Constrcuts a program on video/audio and runs it") {
-    (exprs.orEmpty, vals.orEmpty, in.orNone, out.orNone,
+    (exprs.orEmpty, in.orNone, out.orNone,
         (showScala, showScalaFull).tupled.map(RunOpts.apply)
     ).tupled.map(Run.apply)
   }

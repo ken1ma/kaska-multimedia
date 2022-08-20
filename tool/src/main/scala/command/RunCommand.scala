@@ -19,17 +19,10 @@ import jp.ken1ma.kaska.Cps.syntax._ // await
 import ToolOptions.Commands.RunOpts
 
 class RunCommand[F[_]: Async]:
-  def run(exprs: Seq[String], vals: Seq[String], in: Option[String], out: Option[String], opts: RunOpts): F[Unit] =
+  def run(exprs: Seq[String], in: Option[String], out: Option[String], opts: RunOpts): F[Unit] =
     def toVal(opt: Option[String], name: String): Seq[String] =
         opt.toSeq.map(text => s"""$name = Path.of(s"$text")""")
-    run(exprs, toVal(in, "in") ++ toVal(out, "out") ++ vals, opts)
-
-  def run(exprs: Seq[String], vals: Seq[String], opts: RunOpts): F[Unit] =
-    def toExpr(text: String): String =
-      text.indexOf('=') match
-        case -1 => throw new IllegalArgumentException(s"Must contains '=': $text")
-        case eq => s"val `${text.take(eq).trim}` = ${text.drop(eq + 1).trim}"
-    run(vals.map(toExpr) ++ exprs, opts)
+    run(toVal(in, "in") ++ toVal(out, "out") ++ exprs, opts)
 
   val imports = """
     import java.nio.file._
@@ -51,8 +44,37 @@ class RunCommand[F[_]: Async]:
   """
 
   def run(exprs: Seq[String], opts: RunOpts): F[Unit] = async[F] {
-    val script = exprs.mkString("\n")
-    if (opts.showScala)
+    var indent = 0
+    val lines = exprs.map { expr =>
+      // TODO expr.codePointStepper (handle code points rather than characters)
+      val s0 = expr.trim // trim any character whose codepoint is less than or equal to 'U+0020' (the space character).
+      var open = false
+      val line = if s0.nonEmpty then
+        if s0.endsWith("=>") then // should `{ name =>` be parsed?
+          open = true
+          s0
+        else if Character.isJavaIdentifierStart(s0.head) then
+          val (parts, s1) = s0.tail.span(Character.isJavaIdentifierPart)
+          val name = s0.head +: parts
+          val s2 = s1.trim
+          if s2.nonEmpty && s2.head == '=' then
+            val rhs = s2.tail.trim
+            s"val $name = $rhs"
+          else
+            s0
+        else
+          s0
+      else
+        ""
+
+      val indented = "  " * indent + line
+      if open then
+        indent += 1
+      indented
+
+    }
+    val script = (lines ++ (indent - 1 to 0 by -1).map(i => "  " * i + "}")).mkString("\n")
+    if opts.showScala then
       println(script)
 
     // https://docs.scala-lang.org/scala3/reference/metaprogramming/staging.html

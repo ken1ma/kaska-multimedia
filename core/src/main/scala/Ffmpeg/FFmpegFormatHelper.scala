@@ -24,12 +24,8 @@ object FFmpegFormatHelper {
   ) extends LogContext with AutoCloseable {
     val streams: Seq[AVStream] = (0 until fmt_ctx.nb_streams).map(fmt_ctx.streams(_))
 
-    def firstVideoStream: AVStream = streams.find(_.codecpar.codec_type == AVMEDIA_TYPE_VIDEO).getOrElse {
-      throw new FFmpegException(s"${logCtx.msgName}: There is no video stream")
-    }
-    def firstAudioStream: AVStream = streams.find(_.codecpar.codec_type == AVMEDIA_TYPE_AUDIO).getOrElse {
-      throw new FFmpegException(s"${logCtx.msgName}: There is no audio stream")
-    }
+    def videoStreams: Seq[AVStream] = streams.filter(_.codecpar.codec_type == AVMEDIA_TYPE_VIDEO)
+    def audioStreams: Seq[AVStream] = streams.filter(_.codecpar.codec_type == AVMEDIA_TYPE_AUDIO)
 
     /** @return stream and index */
     def selectStream(pred: AVStream => Boolean): (AVStream, Int) = {

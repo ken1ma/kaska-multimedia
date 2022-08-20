@@ -1,7 +1,9 @@
 package jp.ken1ma.kaska.multimedia
 package Ffmpeg
 
-import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters}
+import java.nio.charset.StandardCharsets.UTF_8
+
+import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters, AVPacket}
 import org.bytedeco.ffmpeg.global.avcodec._
 import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free}
 import org.bytedeco.javacpp.PointerPointer
@@ -17,13 +19,16 @@ object FFmpegCodecHelper {
     codec: AVCodec,
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
+    log.trace(s"creating CodecContext")
+
     def close(): Unit = {
+      log.trace(s"destroying CodecContext")
       avcodec_close(codec_ctx)
       avcodec_free_context(codec_ctx)
     }
 
-    def logName = s"${logCtx.logName} (${codec.name})"
-    def msgName = s"${logCtx.msgName} (${codec.long_name})"
+    def logName = s"${logCtx.logName} (${codec.name.getString(UTF_8)})"
+    def msgName = s"${logCtx.msgName} (${codec.long_name.getString(UTF_8)})"
   }
 
   object CodecContext {
@@ -88,7 +93,8 @@ object FFmpegCodecHelper {
   case class DecodeContext(
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
-    val pkt = av_packet_alloc()
+    log.trace(s"creating DecodeContext")
+    val pkt: AVPacket = av_packet_alloc()
     if (pkt == null)
       throw new FFmpegException(s"${logCtx.msgName}: av_packet_alloc failed")
 
@@ -97,6 +103,7 @@ object FFmpegCodecHelper {
       throw new FFmpegException(s"${logCtx.msgName}: av_frame_alloc failed")
 
     def close(): Unit = {
+      log.trace(s"destroying DecodeContext")
       av_frame_free(frm)
       av_packet_free(pkt)
     }
@@ -107,12 +114,14 @@ object FFmpegCodecHelper {
 
   case class EncodeContext(
     logCtx: LogContext,
-  ) extends LogContext {
-    val pkt = av_packet_alloc()
+  ) extends LogContext with AutoCloseable {
+    log.trace(s"creating EncodeContext")
+    val pkt: AVPacket  = av_packet_alloc()
     if (pkt == null)
       throw new FFmpegException(s"${logCtx.msgName}: av_packet_alloc failed")
 
     def close(): Unit = {
+      log.trace(s"destroying EncodeContext")
       av_packet_free(pkt)
     }
 

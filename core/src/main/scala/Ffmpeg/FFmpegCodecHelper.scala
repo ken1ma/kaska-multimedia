@@ -3,15 +3,21 @@ package Ffmpeg
 
 import java.nio.charset.StandardCharsets.UTF_8
 
+import cats.syntax.all._
+import cats.effect.Async
+import cps.async
+import cps.monads.catsEffect.{*, given}
+import fs2.Stream
+
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters, AVPacket}
 import org.bytedeco.ffmpeg.global.avcodec._
 import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free}
 import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger
 
-import FFmpegCppHelper._
+import FFmpegCppHelper.*
 
-object FFmpegCodecHelper {
+object FFmpegCodecHelper:
   val log = getLogger
 
   case class CodecContext(
@@ -19,10 +25,10 @@ object FFmpegCodecHelper {
     codec: AVCodec,
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
-    log.trace(s"creating CodecContext")
+    log.trace(this)("open")
 
     def close(): Unit = {
-      log.trace(s"destroying CodecContext")
+      log.trace(this)("close")
       avcodec_close(codec_ctx)
       avcodec_free_context(codec_ctx)
     }
@@ -31,101 +37,105 @@ object FFmpegCodecHelper {
     def msgName = s"${logCtx.msgName} (${codec.long_name.getString(UTF_8)})"
   }
 
-  object CodecContext {
-    def fromCodecParams(params: AVCodecParameters,
-        logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): CodecContext = {
-      val codec_ctx = avcodec_alloc_context3(null)
-
-      var succeeded = false
-      try {
-        avcodec_parameters_to_context(codec_ctx, params)
-            .throwWhen(_ < 0, s"avcodec_parameters_to_context failed", log, logCtx)
-
-        customizeContext(codec_ctx)
-
-        import codec_ctx.codec_id
-        val codec = avcodec_find_decoder(codec_id)
-        if (codec == null)
-          throw new FFmpegException(s"${logCtx.msgName}: avcodec_find_decoder failed: not found: $codec_id")
-
-        avcodec_open2(codec_ctx, codec, null.asInstanceOf[PointerPointer[_]])
-            .throwWhen(_ < 0, s"avcodec_open2 failed", log, logCtx)
-
-        succeeded = true
-        CodecContext(codec_ctx, codec, logCtx)
-
-      } finally {
-        if (!succeeded)
-          avcodec_free_context(codec_ctx)
-      }
-    }
-
-    def fromCodec(codec_id: Int,
-        logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): CodecContext = {
-      val codec = avcodec_find_encoder(codec_id)
-      if (codec == null)
-          throw new FFmpegException(s"${logCtx.msgName}: avcodec_find_encoder failed")
-
-      val codec_ctx = avcodec_alloc_context3(codec)
-      if (codec_ctx == null)
-          throw new FFmpegException(s"${logCtx.msgName}: avcodec_alloc_context3 failed")
-
-      var succeeded = false
-      try {
-        customizeContext(codec_ctx)
-
-        avcodec_open2(codec_ctx, codec, null.asInstanceOf[PointerPointer[_]])
-            .throwWhen(_ < 0, s"${logCtx.msgName}: avcodec_open2 failed", log, logCtx)
-
-        succeeded = true
-        CodecContext(codec_ctx, codec, logCtx)
-
-      } finally {
-        if (!succeeded)
-          avcodec_free_context(codec_ctx)
-      }
-    }
-
-    def aac(logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): CodecContext =
-      fromCodec(AV_CODEC_ID_AAC, logCtx, customizeContext)
-  }
-
   case class DecodeContext(
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
-    log.trace(s"creating DecodeContext")
+    log.trace(this)("allocate")
     val pkt: AVPacket = av_packet_alloc()
     if (pkt == null)
-      throw new FFmpegException(s"${logCtx.msgName}: av_packet_alloc failed")
+      throw FFmpegException(this)(s"av_packet_alloc failed")
 
     val frm = av_frame_alloc()
     if (frm == null)
-      throw new FFmpegException(s"${logCtx.msgName}: av_frame_alloc failed")
+      throw FFmpegException(this)(s"av_frame_alloc failed")
 
     def close(): Unit = {
-      log.trace(s"destroying DecodeContext")
+      log.trace(this)("release")
       av_frame_free(frm)
       av_packet_free(pkt)
     }
 
-    def logName = logCtx.logName
-    def msgName = logCtx.msgName
+    def logName = s"${logCtx.logName}: decode"
+    def msgName = s"${logCtx.logName}: decode"
   }
 
   case class EncodeContext(
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
-    log.trace(s"creating EncodeContext")
+    log.trace(this)("allocate")
     val pkt: AVPacket  = av_packet_alloc()
     if (pkt == null)
-      throw new FFmpegException(s"${logCtx.msgName}: av_packet_alloc failed")
+      throw FFmpegException(this)(s"av_packet_alloc failed")
 
     def close(): Unit = {
-      log.trace(s"destroying EncodeContext")
+      log.trace(this)("release")
       av_packet_free(pkt)
     }
 
-    def logName = logCtx.logName
-    def msgName = logCtx.msgName
+    def logName = s"${logCtx.logName}: encode"
+    def msgName = s"${logCtx.logName}: encode"
   }
-}
+
+trait FFmpegCodecHelper[F[_]: Async]:
+  import FFmpegCodecHelper.*
+
+  def openCodecFromParams(params: AVCodecParameters,
+      logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, CodecContext] = {
+    val codec_ctx = avcodec_alloc_context3(null)
+
+    var succeeded = false
+    try {
+      avcodec_parameters_to_context(codec_ctx, params)
+          .throwWhen(_ < 0, s"avcodec_parameters_to_context failed", log, logCtx)
+
+      customizeContext(codec_ctx)
+
+      import codec_ctx.codec_id
+      val codec = avcodec_find_decoder(codec_id)
+      if (codec == null)
+        throw FFmpegException(logCtx)(s"avcodec_find_decoder failed: not found: $codec_id")
+
+      avcodec_open2(codec_ctx, codec, null.asInstanceOf[PointerPointer[_]])
+          .throwWhen(_ < 0, s"avcodec_open2 failed", log, logCtx)
+
+      succeeded = true
+      Stream.fromAutoCloseable(Async[F].delay { new CodecContext(codec_ctx, codec, logCtx) })
+
+    } finally {
+      if (!succeeded)
+        avcodec_free_context(codec_ctx)
+    }
+  }
+
+  def openCodec(codec_id: Int,
+      logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, CodecContext] = {
+    val codec = avcodec_find_encoder(codec_id)
+    if (codec == null)
+        throw FFmpegException(logCtx)(s"avcodec_find_encoder failed")
+
+    val codec_ctx = avcodec_alloc_context3(codec)
+    if (codec_ctx == null)
+        throw FFmpegException(logCtx)(s"avcodec_alloc_context3 failed")
+
+    var succeeded = false
+    try {
+      customizeContext(codec_ctx)
+
+      avcodec_open2(codec_ctx, codec, null.asInstanceOf[PointerPointer[_]])
+          .throwWhen(_ < 0, s"avcodec_open2 failed", log, logCtx)
+
+      succeeded = true
+      Stream.fromAutoCloseable(Async[F].delay { new CodecContext(codec_ctx, codec, logCtx) })
+
+    } finally {
+      if (!succeeded)
+        avcodec_free_context(codec_ctx)
+    }
+  }
+
+  def aac(logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, CodecContext] =
+    openCodec(AV_CODEC_ID_AAC, logCtx, customizeContext)
+
+  def allocateDecodeContext(logCtx: LogContext) = Stream.fromAutoCloseable(Async[F].delay { new DecodeContext(logCtx) })
+
+  def allocateEncodeContext(logCtx: LogContext) = Stream.fromAutoCloseable(Async[F].delay { new EncodeContext(logCtx) })

@@ -84,7 +84,7 @@ The program to run is constructed by
 
 1. Extract key frames as JPEG file
 
-        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "fmtCtx = openForRead(in, dump = true)" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
+        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "readFile(in, dump = true).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
 
     1. TODO: interpolate the output path
 

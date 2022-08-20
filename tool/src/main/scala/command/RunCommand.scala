@@ -25,22 +25,20 @@ class RunCommand[F[_]: Async]:
     run(toVal(in, "in") ++ toVal(out, "out") ++ exprs, opts)
 
   val imports = """
-    import java.nio.file._
-    import scala.util._
+    import java.nio.file.*
+    import scala.util.*
     import scala.util.Properties.{userHome => HOME, userName => USER}
-    import cats._
-    import cats.syntax.all._
-    import cats.effect._
-    import cats.effect.syntax._
-    import fs2._
+    import cats.*
+    import cats.syntax.all.*
+    import cats.effect.*
+    import cats.effect.syntax.*
+    import fs2.*
 
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
-    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegFormatHelper.FormatContext._
-    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegCodecHelper._
     import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegStream
     val ffmpegStream = FFmpegStream[IO]
-    import ffmpegStream._
+    import ffmpegStream.*
   """
 
   def run(exprs: Seq[String], opts: RunOpts): F[Unit] = async[F] {

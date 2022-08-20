@@ -1,5 +1,7 @@
 package jp.ken1ma.kaska.multimedia
 
+import org.log4s.Logger
+
 package object Ffmpeg {
   // The logs have hierarchical name such as `file (codec): ...`
   trait LogContext {
@@ -20,6 +22,13 @@ package object Ffmpeg {
     def apply(name: String): SimpleLogContext = SimpleLogContext(name, name)
   }
 
+  extension (log: Logger)
+    def error(logCtx: LogContext)(msg: String): Unit = log.error(s"${logCtx.logName}: $msg")
+    def warn (logCtx: LogContext)(msg: String): Unit = log.warn (s"${logCtx.logName}: $msg")
+    def info (logCtx: LogContext)(msg: String): Unit = log.info (s"${logCtx.logName}: $msg")
+    def debug(logCtx: LogContext)(msg: String): Unit = log.debug(s"${logCtx.logName}: $msg")
+    def trace(logCtx: LogContext)(msg: String): Unit = log.trace(s"${logCtx.logName}: $msg")
+
   // Throwable(message) leaves cause == this
   // https://github.com/openjdk/jdk17u/blob/master/src/java.base/share/classes/java/lang/Throwable.java#L198
   // thus we cannot say `class FFmpegException(message: String, cause: Throwable = null) extends RuntimeException(message, cause)`
@@ -31,5 +40,11 @@ package object Ffmpeg {
       ex.initCause(cause)
       ex
     }
+
+    def apply(logCtx: LogContext)(message: String): FFmpegException =
+        new FFmpegException(s"${logCtx.msgName}: $message")
+
+    def apply(logCtx: LogContext)(message: String, cause: Throwable): FFmpegException =
+        apply(s"${logCtx.msgName}: $message", cause)
   }
 }

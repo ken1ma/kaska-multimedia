@@ -46,6 +46,7 @@ lazy val tool = (project in file("tool"))
     buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
 
     fork := true,
+    Compile / run / baseDirectory := baseDirectory.value / "..",
   ).dependsOn(core /*% "compile->compile; runtime->runtime"*/)
 
 lazy val core = (project in file("core"))

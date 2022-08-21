@@ -86,15 +86,19 @@ The program to run is constructed by
 
     1. All the frames as JPEG files
 
-            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-allFrames" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).flatMap(fileGen)" --show-scala
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-allFrames" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).map(_.frm).flatMap(fileGen)" --show-scala
 
     1. The key frames as PNG files
 
-            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "readFile(in, dump = true).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.png(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "readFile(in, dump = true).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.png(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).map(_.frm).filter(_.keyFrame).flatMap(fileGen)" --show-scala
 
 1. Transcode a video to H264
 
-        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width, stream.height).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)" --show-scala
+        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width, stream.height).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).map(_.frm).flatMap(fileWrite)" --show-scala
+
+    1. Skip even frames (frame_number starts at 1)
+
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-oddFrames.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width, stream.height).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).filter(_.decodeCtx.codec_ctx.frame_number % 2 == 1).map(_.frm).flatMap(fileWrite)" --show-scala
 
 1. Transcode an audio to aac
 

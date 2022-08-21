@@ -37,7 +37,7 @@ object FFmpegCodecHelper:
     def msgName = s"${logCtx.msgName} (${codec.long_name.getString(UTF_8)})"
   }
 
-  case class DecodeContext(
+  case class DecodeContext( // TODO rename to DecodeBuf
     logCtx: LogContext,
   ) extends LogContext with AutoCloseable {
     log.trace(this)("allocate")

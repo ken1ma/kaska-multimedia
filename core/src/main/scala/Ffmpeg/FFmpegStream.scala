@@ -32,12 +32,12 @@ import FFmpegFormatHelper.*
 object FFmpegStream:
   val log = getLogger
 
-  case class Frame(frame: AVFrame, stream: AVStream)
+  case class DecodedFrame(frm: AVFrame, decodeCtx: CodecContext, stream: AVStream, fmtCtx: FormatContext)
 
 class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecHelper[F]:
   import FFmpegStream._
 
-  def streamFrames(stream: AVStream, fmtCtx: FormatContext): Stream[F, AVFrame] = {
+  def streamFrames(stream: AVStream, fmtCtx: FormatContext): Stream[F, DecodedFrame] = {
     import fmtCtx.fmt_ctx
 
     val codecpar = stream.codecpar
@@ -85,7 +85,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
                 // frm.display_picture_number seems to be always 0 for H264
                 // but avcodec_receive_frame seems to return frames in the display order (as seen in pkt_pts)
 
-                Stream.emit(frm)
+                Stream.emit(DecodedFrame(frm, codecCtx, stream, fmtCtx))
 
           } else {
             av_packet_unref(pkt)

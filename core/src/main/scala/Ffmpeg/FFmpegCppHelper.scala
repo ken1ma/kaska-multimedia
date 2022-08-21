@@ -3,6 +3,8 @@ package Ffmpeg
 
 import java.nio.file.Path
 
+import org.bytedeco.ffmpeg
+
 import org.log4s.Logger
 
 object FFmpegCppHelper:
@@ -15,3 +17,9 @@ object FFmpegCppHelper:
       ret
     }
   }
+
+  // stable identifier for match
+  val AVERROR_EINVAL = ffmpeg.presets.avutil.AVERROR_EINVAL // -22
+  val AVERROR_EAGAIN = ffmpeg.presets.avutil.AVERROR_EAGAIN // -35
+
+  //println(s"#### AVERROR_EAGAIN = $AVERROR_EAGAIN")

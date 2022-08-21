@@ -3,14 +3,14 @@ package Ffmpeg
 
 import java.nio.charset.StandardCharsets.UTF_8
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.Async
 import cps.async
 import cps.monads.catsEffect.{*, given}
 import fs2.Stream
 
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters, AVPacket}
-import org.bytedeco.ffmpeg.global.avcodec._
+import org.bytedeco.ffmpeg.global.avcodec.*
 import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free}
 import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger
@@ -132,9 +132,6 @@ trait FFmpegCodecHelper[F[_]: Async]:
         avcodec_free_context(codec_ctx)
     }
   }
-
-  def aac(logCtx: LogContext, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, CodecContext] =
-    openCodec(AV_CODEC_ID_AAC, logCtx, customizeContext)
 
   def allocateDecodeContext(logCtx: LogContext) = Stream.fromAutoCloseable(Async[F].delay { new DecodeContext(logCtx) })
 

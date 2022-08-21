@@ -6,7 +6,7 @@ import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 import java.nio.file.{Path, Files, StandardOpenOption}, StandardOpenOption.{CREATE, WRITE, TRUNCATE_EXISTING}
 import java.nio.charset.StandardCharsets.UTF_8
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.Async
 import cps.async
 import cps.monads.catsEffect.{*, given}
@@ -19,8 +19,8 @@ import org.bytedeco.javacpp.{PointerPointer, BytePointer, DoublePointer}
 import org.bytedeco.ffmpeg.global.avformat.av_read_frame
 import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_packet, avcodec_receive_frame, av_packet_unref}
 import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_frame, avcodec_receive_packet}
-import org.bytedeco.ffmpeg.global.avcodec.{AV_CODEC_ID_H264, AV_CODEC_ID_MJPEG, AV_CODEC_ID_PNG}
-import org.bytedeco.ffmpeg.global.avutil._
+import org.bytedeco.ffmpeg.global.avcodec.* // AV_CODEC_ID_H264, ..., AV_CODEC_ID_MJPEG, ...
+import org.bytedeco.ffmpeg.global.avutil.*
 import org.log4s.getLogger
 
 import jp.ken1ma.kaska.Cps.syntax._ // await
@@ -164,6 +164,62 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
         }
       }
 
+    def aac(out: Path, srcStream: AVStream): Stream[F, AVFrame => Stream[F, Unit]] =
+      val logCtx = SimpleLogContext(out.toString)
+      Stream.fromAutoCloseable(Async[F].delay { Files.newByteChannel(out,
+          CREATE, WRITE, TRUNCATE_EXISTING) }).flatMap { outCh =>
+
+        // the codec for encoding
+        // https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/transcode_aac.c
+        openCodec(AV_CODEC_ID_AAC, logCtx, codec_ctx => {
+              // Avoid `The encoder timebase is not set.`
+              codec_ctx.time_base.num(1)
+              codec_ctx.time_base.den(srcStream.codecpar.sample_rate)
+              // Avoid `Specified sample format -1 is invalid or not supported`
+              codec_ctx.sample_fmt(AV_SAMPLE_FMT_FLTP) // wav: srcStream.codecpar.format results in `Specified sample format s16 is invalid or not supported`
+              // Avoid `Specified sample rate 0 is not supported`
+              codec_ctx.sample_rate(srcStream.codecpar.sample_rate)
+              // Avoid `Unsupported channel layout "0 channels"`
+              codec_ctx.channel_layout(AV_CH_LAYOUT_MONO) // FIXME AV_CH_LAYOUT_STEREO results in segfault
+
+              codec_ctx.bit_rate(srcStream.codecpar.bit_rate)
+
+            }).flatMap { codecCtx =>
+          import codecCtx.codec_ctx
+
+          // memory for encoding
+          allocateEncodeContext(logCtx = codecCtx).flatMap { encodeCtx =>
+            import encodeCtx.pkt
+
+            Stream.emit(frm => Stream.eval(Async[F].delay {
+              avcodec_send_frame(codec_ctx, frm)
+                  .throwWhen(_ < 0, s"avcodec_send_frame failed", log, logCtx)
+              av_frame_unref(frm) // TODO is this correct?
+
+              avcodec_receive_packet(codec_ctx, pkt) match
+                case AVERROR_EAGAIN =>
+                  //println(s"#### AVERROR_EAGAIN")
+
+                case AVERROR_EINVAL =>
+                  println(s"#### AVERROR_EINVAL")
+                  //throw FFmpegException(encodeCtx)(s"avcodec_receive_packet: encoding error")
+
+                case ret =>
+                  println(s"#### ret = $ret")
+                  ret.throwWhen(_ < 0, s"avcodec_receive_packet failed", log, logCtx)
+
+                  var data = pkt.data
+                  val size = pkt.size
+                  data = data.limit(size) // override (ffmpeg-platform:5.0-1.5.7: position, limit, capacity are all zero)
+
+                  log.trace(f"appending ($size%,d bytes)")
+                  outCh.write(data.asByteBuffer)
+
+                  //println(s"#### one more ${avcodec_receive_packet(codec_ctx, pkt)}")
+            }))
+          }
+        }
+      }
 
   object FrameFileGen:
     def jpeg(dir: Path, width: Int, height: Int): Stream[F, AVFrame => Stream[F, Path]] =

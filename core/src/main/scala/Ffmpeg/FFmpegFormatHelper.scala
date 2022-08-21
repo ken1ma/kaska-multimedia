@@ -4,7 +4,7 @@ package Ffmpeg
 import java.nio.file.{Path, Files, StandardOpenOption}
 import java.nio.charset.StandardCharsets.UTF_8
 
-import cats.syntax.all._
+import cats.syntax.all.*
 import cats.effect.Async
 import cps.async
 import cps.monads.catsEffect.{*, given}
@@ -13,7 +13,7 @@ import fs2.Stream
 import org.bytedeco.ffmpeg.avformat.{AVFormatContext, AVStream, AVInputFormat}
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVPacket}
 import org.bytedeco.ffmpeg.avutil.{AVDictionary, AVFrame}
-import org.bytedeco.ffmpeg.global.avformat._
+import org.bytedeco.ffmpeg.global.avformat.*
 import org.bytedeco.ffmpeg.global.avutil.{AVMEDIA_TYPE_VIDEO, AVMEDIA_TYPE_AUDIO}
 import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger

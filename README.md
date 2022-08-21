@@ -98,7 +98,7 @@ The program to run is constructed by
 
 1. Transcode an audio to aac
 
-        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "out/Moomin.aac" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.audioStreams.head" -e "FileWrite.aac(out).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)"
+        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "out/Moomin.aac" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.audioStreams.head" -e "FileWrite.aac(out, stream).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)"
 
 
 ## More SBT commands

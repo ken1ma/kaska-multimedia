@@ -82,20 +82,23 @@ The program to run is constructed by
 
 ## Examples
 
-1. Extract key frames as JPEG file
+1. Extract video frames
 
-        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "readFile(in, dump = true).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
+    1. All the frames as JPEG files
 
-    1. TODO: interpolate the output path
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-allFrames" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.jpeg(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).flatMap(fileGen)" --show-scala
 
-1. Transcode wav to aac
+    1. The key frames as PNG files
 
-        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "$HOME/Documents/convivial/Moomin.aac" -e "fmtCtx = openForRead(in, dump = true)" -e "stream = fmtCtx.firstAudioStream" -e "frames = streamFrames(stream, fmtCtx)"
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-keyFrames" -e "readFile(in, dump = true).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FrameFileGen.png(dir = out, stream.width, stream.height).flatMap { fileGen =>" -e "streamFrames(stream, fmtCtx).filter(_.keyFrame).flatMap(fileGen)" --show-scala
 
+1. Transcode a video to H264
 
-1. Extract key frames from a video file
+        tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width, stream.height).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)" --show-scala
 
-		tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/${in.baseName}-keyFrames/pts.jpeg" -d "write=JpegWriter(out)" -e "streamVideoFramesFrom(in).filter(_.frame.keyFrame).flatMap(write)"
+1. Transcode an audio to aac
+
+        tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "out/Moomin.aac" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.audioStreams.head" -e "FileWrite.aac(out).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)"
 
 
 ## More SBT commands

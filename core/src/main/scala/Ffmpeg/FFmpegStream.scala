@@ -3,7 +3,7 @@ package Ffmpeg
 
 import scala.util.Using
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
-import java.nio.file.{Path, Files}
+import java.nio.file.{Path, Files, StandardOpenOption}, StandardOpenOption.{CREATE, WRITE, TRUNCATE_EXISTING}
 import java.nio.charset.StandardCharsets.UTF_8
 
 import cats.syntax.all._
@@ -13,10 +13,14 @@ import cps.monads.catsEffect.{*, given}
 import fs2.Stream
 
 import org.bytedeco.ffmpeg.avformat.AVStream
+import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVPacket}
 import org.bytedeco.ffmpeg.avutil.{AVFrame, AVRational}
 import org.bytedeco.javacpp.{PointerPointer, BytePointer, DoublePointer}
-import org.bytedeco.ffmpeg.global.avformat._
-import org.bytedeco.ffmpeg.global.avcodec._
+import org.bytedeco.ffmpeg.global.avformat.av_read_frame
+import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_packet, avcodec_receive_frame, av_packet_unref}
+import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_frame, avcodec_receive_packet}
+import org.bytedeco.ffmpeg.global.avcodec.{AV_CODEC_ID_H264, AV_CODEC_ID_MJPEG, AV_CODEC_ID_PNG}
+import org.bytedeco.ffmpeg.global.avutil._
 import org.log4s.getLogger
 
 import jp.ken1ma.kaska.Cps.syntax._ // await
@@ -30,7 +34,7 @@ object FFmpegStream:
 
   case class Frame(frame: AVFrame, stream: AVStream)
 
-class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]:
+class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecHelper[F]:
   import FFmpegStream._
 
   def streamFrames(stream: AVStream, fmtCtx: FormatContext): Stream[F, AVFrame] = {
@@ -117,3 +121,120 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]:
         }
       }
 */
+
+  object FileWrite:
+    def h264(out: Path, width: Int, height: Int): Stream[F, AVFrame => Stream[F, Unit]] =
+      val logCtx = SimpleLogContext(out.toString)
+      Stream.fromAutoCloseable(Async[F].delay { Files.newByteChannel(out,
+          CREATE, WRITE, TRUNCATE_EXISTING) }).flatMap { outCh =>
+
+        // the codec for encoding
+        openCodec(AV_CODEC_ID_H264, logCtx, codec_ctx => {
+              // Avoid `The encoder timebase is not set.`
+              codec_ctx.time_base.num(1)
+              codec_ctx.time_base.den(60000)
+              // Avoid `Specified pixel format -1 is invalid or not supported`
+              codec_ctx.pix_fmt(AV_PIX_FMT_YUV420P)
+              // Avoid `dimensions not set`
+              codec_ctx.width(width)
+              codec_ctx.height(height)
+            }).flatMap { codecCtx =>
+          import codecCtx.codec_ctx
+
+          // memory for encoding
+          allocateEncodeContext(logCtx = codecCtx).flatMap { encodeCtx =>
+            import encodeCtx.pkt
+
+            Stream.emit(frm => Stream.eval(Async[F].delay {
+              avcodec_send_frame(codec_ctx, frm)
+                  .throwWhen(_ < 0, s"avcodec_send_frame failed", log, logCtx)
+              av_frame_unref(frm) // TODO is this correct?
+
+              avcodec_receive_packet(codec_ctx, pkt)
+                  .throwWhen(_ < 0, s"avcodec_receive_packet failed", log, logCtx)
+
+              var data = pkt.data
+              val size = pkt.size
+              data = data.limit(size) // override (ffmpeg-platform:5.0-1.5.7: position, limit, capacity are all zero)
+
+              log.trace(f"appending ($size%,d bytes)")
+              outCh.write(data.asByteBuffer)
+            }))
+          }
+        }
+      }
+
+
+  object FrameFileGen:
+    def jpeg(dir: Path, width: Int, height: Int): Stream[F, AVFrame => Stream[F, Path]] =
+      if (!Files.isDirectory(dir))
+        Files.createDirectories(dir)
+
+      // the codec for encoding
+      openCodec(AV_CODEC_ID_MJPEG, SimpleLogContext(dir.toString), codec_ctx => {
+            // Avoid `The encoder timebase is not set.`
+            codec_ctx.time_base.num(1)
+            codec_ctx.time_base.den(1)
+            // Avoid `Specified pixel format -1 is invalid or not supported`
+            codec_ctx.pix_fmt(AV_PIX_FMT_YUV420P)
+            // Avoid `dimensions not set`
+            codec_ctx.width(width)
+            codec_ctx.height(height)
+            // Avoid `Non full-range YUV is non-standard, set strict_std_compliance to at most unofficial to use it`
+            codec_ctx.strict_std_compliance(-1)
+          }).flatMap { codecCtx =>
+        import codecCtx.codec_ctx
+
+        // memory for encoding
+        allocateEncodeContext(logCtx = codecCtx).flatMap { encodeCtx =>
+          Stream.emit(writeFrame(codec_ctx, encodeCtx, (frm, pkt) => dir.resolve(s"pts=${pkt.pts}.jpeg"))) // TODO customize pathGen
+        }
+      }
+
+    def png(dir: Path, width: Int, height: Int): Stream[F, AVFrame => Stream[F, Path]] = 
+      if (!Files.isDirectory(dir))
+        Files.createDirectories(dir)
+
+      // FIXME the image is repeated three times; probably need to convert frm to AV_PIX_FMT_RGB24
+
+      // the codec for encoding
+      openCodec(AV_CODEC_ID_PNG, SimpleLogContext(dir.toString), codec_ctx => {
+            // Avoid `The encoder timebase is not set.`
+            codec_ctx.time_base.num(1)
+            codec_ctx.time_base.den(1)
+            // Avoid `Specified pixel format -1 is invalid or not supported`
+            codec_ctx.pix_fmt(AV_PIX_FMT_RGB24) // AV_PIX_FMT_YUV420P results in `Specified pixel format yuv420p is invalid or not supported`
+            // Avoid `dimensions not set`
+            codec_ctx.width(width)
+            codec_ctx.height(height)
+          }).flatMap { codecCtx =>
+        import codecCtx.codec_ctx
+
+        // memory for encoding
+        allocateEncodeContext(logCtx = codecCtx).flatMap { encodeCtx =>
+          Stream.emit(writeFrame(codec_ctx, encodeCtx, (frm, pkt) => dir.resolve(s"pts=${pkt.pts}.png"))) // TODO customize pathGen
+        }
+      }
+
+    def writeFrame(codec_ctx: AVCodecContext, encodeCtx: EncodeContext, pathGen: (AVFrame, AVPacket) => Path)(frm: AVFrame): Stream[F, Path] =
+      import encodeCtx.pkt
+      val logCtx = encodeCtx // TODO can frm number be extracted from frm?
+
+      avcodec_send_frame(codec_ctx, frm)
+          .throwWhen(_ < 0, s"avcodec_send_frame failed", log, logCtx)
+      av_frame_unref(frm) // TODO is this correct?
+
+      avcodec_receive_packet(codec_ctx, pkt)
+          .throwWhen(_ < 0, s"avcodec_receive_packet failed", log, logCtx)
+
+      var data = pkt.data
+      val size = pkt.size
+      data = data.limit(size) // override (ffmpeg-platform:5.0-1.5.7: position, limit, capacity are all zero)
+      val buf = new Array[Byte](size)
+      data.asByteBuffer.get(buf)
+
+      val file = pathGen(frm, pkt)
+      log.info(f"writing $file ($size%,d bytes)")
+      Files.write(file, buf)
+
+      Stream.emit(file)

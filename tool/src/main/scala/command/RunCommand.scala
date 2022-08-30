@@ -36,7 +36,7 @@ class RunCommand[F[_]: Async]:
 
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
-    import jp.ken1ma.kaska.multimedia.Ffmpeg.FFmpegStream
+    import jp.ken1ma.kaska.multimedia.FFmpeg.FFmpegStream
     val ffmpegStream = FFmpegStream[IO]
     import ffmpegStream.*
   """

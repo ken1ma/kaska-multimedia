@@ -1,5 +1,5 @@
 package jp.ken1ma.kaska.multimedia
-package Ffmpeg
+package FFmpeg
 
 import scala.util.Using
 import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}

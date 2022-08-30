@@ -1,5 +1,5 @@
 package jp.ken1ma.kaska.multimedia
-package Ffmpeg
+package FFmpeg
 
 import java.nio.file.{Path, Files, StandardOpenOption}
 import java.nio.charset.StandardCharsets.UTF_8

@@ -2,7 +2,7 @@ package jp.ken1ma.kaska.multimedia
 
 import org.log4s.Logger
 
-package object Ffmpeg {
+package object FFmpeg {
   // The logs have hierarchical name such as `file (codec): ...`
   trait LogContext {
     def logName: String

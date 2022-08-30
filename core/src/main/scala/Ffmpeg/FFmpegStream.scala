@@ -124,21 +124,24 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
 
   object FileWrite:
     def h264(out: Path, width: Int, height: Int): Stream[F, AVFrame => Stream[F, Unit]] =
+      h264(out, codec_ctx => {
+        // Avoid `The encoder timebase is not set.`
+        codec_ctx.time_base.num(1)
+        codec_ctx.time_base.den(60000)
+        // Avoid `Specified pixel format -1 is invalid or not supported`
+        codec_ctx.pix_fmt(AV_PIX_FMT_YUV420P)
+        // Avoid `dimensions not set`
+        codec_ctx.width(width)
+        codec_ctx.height(height)
+      })
+
+    def h264(out: Path, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, AVFrame => Stream[F, Unit]] =
       val logCtx = SimpleLogContext(out.toString)
       Stream.fromAutoCloseable(Async[F].delay { Files.newByteChannel(out,
           CREATE, WRITE, TRUNCATE_EXISTING) }).flatMap { outCh =>
 
         // the codec for encoding
-        openCodec(AV_CODEC_ID_H264, logCtx, codec_ctx => {
-              // Avoid `The encoder timebase is not set.`
-              codec_ctx.time_base.num(1)
-              codec_ctx.time_base.den(60000)
-              // Avoid `Specified pixel format -1 is invalid or not supported`
-              codec_ctx.pix_fmt(AV_PIX_FMT_YUV420P)
-              // Avoid `dimensions not set`
-              codec_ctx.width(width)
-              codec_ctx.height(height)
-            }).flatMap { codecCtx =>
+        openCodec(AV_CODEC_ID_H264, logCtx, customizeContext).flatMap { codecCtx =>
           import codecCtx.codec_ctx
 
           // memory for encoding
@@ -157,7 +160,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
               val size = pkt.size
               data = data.limit(size) // override (ffmpeg-platform:5.0-1.5.7: position, limit, capacity are all zero)
 
-              log.trace(f"appending ($size%,d bytes)")
+              log.trace(f"${out.toAbsolutePath}: appending ($size%,d bytes)")
               outCh.write(data.asByteBuffer)
             }))
           }
@@ -165,26 +168,28 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
       }
 
     def aac(out: Path, srcStream: AVStream): Stream[F, AVFrame => Stream[F, Unit]] =
+      aac(out, codec_ctx => {
+        // Avoid `The encoder timebase is not set.`
+        codec_ctx.time_base.num(1)
+        codec_ctx.time_base.den(srcStream.codecpar.sample_rate)
+        // Avoid `Specified sample format -1 is invalid or not supported`
+        codec_ctx.sample_fmt(AV_SAMPLE_FMT_FLTP) // wav: srcStream.codecpar.format results in `Specified sample format s16 is invalid or not supported`
+        // Avoid `Specified sample rate 0 is not supported`
+        codec_ctx.sample_rate(srcStream.codecpar.sample_rate)
+        // Avoid `Unsupported channel layout "0 channels"`
+        codec_ctx.channel_layout(AV_CH_LAYOUT_MONO) // FIXME AV_CH_LAYOUT_STEREO results in segfault
+
+        codec_ctx.bit_rate(srcStream.codecpar.bit_rate)
+      })
+
+    def aac(out: Path, customizeContext: AVCodecContext => Unit = _ => ()): Stream[F, AVFrame => Stream[F, Unit]] =
       val logCtx = SimpleLogContext(out.toString)
       Stream.fromAutoCloseable(Async[F].delay { Files.newByteChannel(out,
           CREATE, WRITE, TRUNCATE_EXISTING) }).flatMap { outCh =>
 
         // the codec for encoding
         // https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/transcode_aac.c
-        openCodec(AV_CODEC_ID_AAC, logCtx, codec_ctx => {
-              // Avoid `The encoder timebase is not set.`
-              codec_ctx.time_base.num(1)
-              codec_ctx.time_base.den(srcStream.codecpar.sample_rate)
-              // Avoid `Specified sample format -1 is invalid or not supported`
-              codec_ctx.sample_fmt(AV_SAMPLE_FMT_FLTP) // wav: srcStream.codecpar.format results in `Specified sample format s16 is invalid or not supported`
-              // Avoid `Specified sample rate 0 is not supported`
-              codec_ctx.sample_rate(srcStream.codecpar.sample_rate)
-              // Avoid `Unsupported channel layout "0 channels"`
-              codec_ctx.channel_layout(AV_CH_LAYOUT_MONO) // FIXME AV_CH_LAYOUT_STEREO results in segfault
-
-              codec_ctx.bit_rate(srcStream.codecpar.bit_rate)
-
-            }).flatMap { codecCtx =>
+        openCodec(AV_CODEC_ID_AAC, logCtx, customizeContext).flatMap { codecCtx =>
           import codecCtx.codec_ctx
 
           // memory for encoding
@@ -212,7 +217,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
                   val size = pkt.size
                   data = data.limit(size) // override (ffmpeg-platform:5.0-1.5.7: position, limit, capacity are all zero)
 
-                  log.trace(f"appending ($size%,d bytes)")
+                  log.trace(f"${out.toAbsolutePath}: appending ($size%,d bytes)")
                   outCh.write(data.asByteBuffer)
 
                   //println(s"#### one more ${avcodec_receive_packet(codec_ctx, pkt)}")

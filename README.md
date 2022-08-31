@@ -100,6 +100,10 @@ The program to run is constructed by
 
             tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-oddFrames.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width, stream.height).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).filter(_.decodeCtx.codec_ctx.frame_number % 2 == 1).map(_.frm).flatMap(fileWrite)" --show-scala
 
+    1. Halve the dimension
+
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-half.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width / 2, stream.height / 2).flatMap { fileWrite =>" -e "allocSwScaleContextWithDstFrm(stream.width, stream.height, AV_PIX_FMT_YUV420P, stream.width / 2, stream.height / 2, AV_PIX_FMT_YUV420P, logCtx = fmtCtx).flatMap { swScaleCtx =>" -e "streamFrames(stream, fmtCtx).map(_.frm).flatMap(srcFrm => scaleFrame(srcFrm, swScaleCtx)).flatMap(_ => fileWrite(swScaleCtx.dstFrm))" --show-scala
+
 1. Transcode an audio to aac
 
         tool/run run -i "$HOME/Documents/convivial/Moomin.wav" -o "out/Moomin.aac" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.audioStreams.head" -e "FileWrite.aac(out, stream).flatMap { fileWrite =>" -e "streamFrames(stream, fmtCtx).flatMap(fileWrite)"

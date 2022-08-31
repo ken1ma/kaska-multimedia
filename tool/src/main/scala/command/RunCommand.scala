@@ -34,6 +34,8 @@ class RunCommand[F[_]: Async]:
     import cats.effect.syntax.*
     import fs2.*
 
+    import org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P
+
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
     import jp.ken1ma.kaska.multimedia.FFmpeg.FFmpegStream

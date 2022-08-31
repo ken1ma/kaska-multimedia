@@ -26,15 +26,18 @@ import org.log4s.getLogger
 import jp.ken1ma.kaska.Cps.syntax._ // await
 
 import FFmpegCppHelper.*
-import FFmpegCodecHelper.*
 import FFmpegFormatHelper.*
+import FFmpegCodecHelper.*
+import FFmpegSwScaleHelper.*
 
 object FFmpegStream:
   val log = getLogger
 
   case class DecodedFrame(frm: AVFrame, decodeCtx: CodecContext, stream: AVStream, fmtCtx: FormatContext)
 
-class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecHelper[F]:
+class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
+    with FFmpegCodecHelper[F]
+    with FFmpegSwScaleHelper[F]:
   import FFmpegStream._
 
   def streamFrames(stream: AVStream, fmtCtx: FormatContext): Stream[F, DecodedFrame] = {
@@ -299,3 +302,10 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F] with  FFmpegCodecH
       Files.write(file, buf)
 
       Stream.emit(file)
+
+
+  def scaleFrame(dstFrm: AVFrame, srcFrm: AVFrame, swScaleCtx: SwScaleContext): Stream[F, Unit] =
+      Stream.emit { swScaleCtx.scaleFrame(dstFrm, srcFrm) }
+
+  def scaleFrame(srcFrm: AVFrame, swScaleCtx: SwScaleContextWithDstFrm): Stream[F, Unit] =
+      Stream.emit { swScaleCtx.scaleFrame(srcFrm) }

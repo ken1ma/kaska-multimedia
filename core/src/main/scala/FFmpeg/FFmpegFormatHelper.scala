@@ -46,7 +46,7 @@ object FFmpegFormatHelper:
     }
 
     def close(): Unit = {
-      log.debug(this)(s"close")
+      log.trace(this)(s"close")
       avformat_close_input(fmt_ctx)
       avformat_free_context(fmt_ctx)
     }
@@ -61,7 +61,7 @@ trait FFmpegFormatHelper[F[_]: Async]:
   /** @param fmt autodetected when null */
   def readFile(file: Path, fmt: AVInputFormat = null, options: AVDictionary = null, dump: Boolean = false): Stream[F, FormatContext] = {
     val logCtx1 = SimpleLogContext(file.toAbsolutePath.toString, file.getFileName.toString)
-    log.debug(logCtx1)(f"open (${Files.size(file) / 1024.0 / 1024}%,.1fMB)")
+    log.trace(logCtx1)(f"open (${Files.size(file) / 1024.0 / 1024}%,.1fMB)")
 
     val fmt_ctx = avformat_alloc_context()
 

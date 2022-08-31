@@ -113,7 +113,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
                 val ptsDiffMs = 1000 * ptsDiff * stream.time_base.num / stream.time_base.den
 
                 val elapsedTime = currentTime - firstTime
-                //log.debug(s"elapsedTime = $elapsedTime, ptsDiffMs = $ptsDiffMs (${frm.pts}, ${frm.time_base.num} / ${frm.time_base.den}) (${stream.start_time}, ${stream.time_base.num} / ${stream.time_base.den})")
+                //log.trace(s"elapsedTime = $elapsedTime, ptsDiffMs = $ptsDiffMs (${frm.pts}, ${frm.time_base.num} / ${frm.time_base.den}) (${stream.start_time}, ${stream.time_base.num} / ${stream.time_base.den})")
                 (Some(firstTime), (Option.when(elapsedTime < ptsDiffMs)(ptsDiffMs - elapsedTime), Frame(frm, stream)))
 
           }.flatMap { case (_, (delayOpt, elem)) =>

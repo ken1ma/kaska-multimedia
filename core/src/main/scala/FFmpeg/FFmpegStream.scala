@@ -15,7 +15,6 @@ import fs2.Stream
 import org.bytedeco.ffmpeg.avformat.AVStream
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVPacket}
 import org.bytedeco.ffmpeg.avutil.{AVFrame, AVRational}
-import org.bytedeco.javacpp.{PointerPointer, BytePointer, DoublePointer}
 import org.bytedeco.ffmpeg.global.avformat.av_read_frame
 import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_packet, avcodec_receive_frame, av_packet_unref}
 import org.bytedeco.ffmpeg.global.avcodec.{avcodec_send_frame, avcodec_receive_packet}
@@ -28,6 +27,7 @@ import jp.ken1ma.kaska.Cps.syntax._ // await
 import FFmpegCppHelper.*
 import FFmpegFormatHelper.*
 import FFmpegCodecHelper.*
+import FFmpegFilterHelper.*
 import FFmpegSwScaleHelper.*
 
 object FFmpegStream:
@@ -37,6 +37,7 @@ object FFmpegStream:
 
 class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
     with FFmpegCodecHelper[F]
+    with FFmpegFilterHelper[F]
     with FFmpegSwScaleHelper[F]:
   import FFmpegStream._
 
@@ -303,6 +304,9 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
 
       Stream.emit(file)
 
+
+  def filterFrame(srcFrm: AVFrame, filterCtx: FilterContext): Stream[F, Unit] =
+      Stream.emit { filterCtx.filterFrame(srcFrm) }
 
   def scaleFrame(dstFrm: AVFrame, srcFrm: AVFrame, swScaleCtx: SwScaleContext): Stream[F, Unit] =
       Stream.emit { swScaleCtx.scaleFrame(dstFrm, srcFrm) }

@@ -9,10 +9,10 @@ import cps.async
 import cps.monads.catsEffect.{*, given}
 import fs2.Stream
 
+import org.bytedeco.javacpp.PointerPointer
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVCodec, AVCodecParameters, AVPacket}
 import org.bytedeco.ffmpeg.global.avcodec.*
 import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free}
-import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger
 
 import FFmpegCppHelper.*

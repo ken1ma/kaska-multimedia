@@ -10,12 +10,12 @@ import cps.async
 import cps.monads.catsEffect.{*, given}
 import fs2.Stream
 
+import org.bytedeco.javacpp.PointerPointer
 import org.bytedeco.ffmpeg.avformat.{AVFormatContext, AVStream, AVInputFormat}
 import org.bytedeco.ffmpeg.avcodec.{AVCodecContext, AVPacket}
 import org.bytedeco.ffmpeg.avutil.{AVDictionary, AVFrame}
 import org.bytedeco.ffmpeg.global.avformat.*
 import org.bytedeco.ffmpeg.global.avutil.{AVMEDIA_TYPE_VIDEO, AVMEDIA_TYPE_AUDIO}
-import org.bytedeco.javacpp.PointerPointer
 import org.log4s.getLogger
 
 import FFmpegCppHelper.*
@@ -33,6 +33,9 @@ object FFmpegFormatHelper:
 
     def videoStreams: Seq[AVStream] = streams.filter(_.codecpar.codec_type == AVMEDIA_TYPE_VIDEO)
     def audioStreams: Seq[AVStream] = streams.filter(_.codecpar.codec_type == AVMEDIA_TYPE_AUDIO)
+
+    // TODO: use av_find_best_stream
+    // https://github.com/FFmpeg/FFmpeg/blob/master/doc/examples/filtering_video.c#L70
 
     /** @return stream and index */
     def selectStream(pred: AVStream => Boolean): (AVStream, Int) = {

@@ -17,9 +17,10 @@ package object FFmpeg {
         SimpleLogContext(s"$logName: $suffix", s"$msgName: $suffix")
   }
 
-  case class SimpleLogContext(logName: String, msgName: String) extends LogContext
+  class SimpleLogContext(val logName: String, val msgName: String) extends LogContext
   object SimpleLogContext {
-    def apply(name: String): SimpleLogContext = SimpleLogContext(name, name)
+    def apply(logName: String, msgName: String): LogContext = new SimpleLogContext(logName, msgName)
+    def apply(name: String): LogContext = SimpleLogContext(name, name)
   }
 
   extension (log: Logger)

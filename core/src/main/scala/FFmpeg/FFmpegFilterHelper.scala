@@ -13,7 +13,7 @@ import org.bytedeco.javacpp.{PointerPointer, BytePointer}
 import org.bytedeco.ffmpeg.avfilter.{AVFilterContext, AVFilterGraph, AVFilterInOut}
 import org.bytedeco.ffmpeg.avutil.AVFrame
 import org.bytedeco.ffmpeg.global.avfilter.*
-import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free}
+import org.bytedeco.ffmpeg.global.avutil.{av_frame_alloc, av_frame_free, av_frame_unref}
 import org.log4s.getLogger
 
 import FFmpegCppHelper.*
@@ -44,16 +44,30 @@ object FFmpegFilterHelper:
       //avfilter_free(buffersrc_ctx) // this results in SIGSEGV
     }
 
-    def filterFrame(srcFrm: AVFrame): Unit =
+    def filterFrame[F[_]: Async, A](srcFrm: AVFrame, f: AVFrame => Stream[F, A]): Stream[F, A] =
       // push the decoded frame into the filtergraph
       av_buffersrc_add_frame_flags(buffersrc_ctx, srcFrm, AV_BUFFERSRC_FLAG_KEEP_REF)
           .throwWhen(_ < 0, s"av_buffersrc_add_frame_flags failed", log, logCtx)
 
       // pull filtered frames from the filtergraph
-      av_buffersink_get_frame(buffersink_ctx, dstFrm)
-          .throwWhen(_ < 0, s"av_buffersink_get_frame failed", log, logCtx)
-
-      // TODO av_frame_unref
+      Stream.fromBlockingIterator(Iterator.continually {
+        println(s"before av_buffersink_get_frame")
+        val ret = av_buffersink_get_frame(buffersink_ctx, dstFrm)
+            .throwWhen(_ < 0, s"av_buffersink_get_frame failed", log, logCtx)
+        println(s"after av_buffersink_get_frame: $ret")
+        ret
+      }.takeWhile { _ match
+        case `AVERROR_EAGAIN` => false
+        case ret => true
+      }, chunkSize = 1).flatMap { _ =>
+        println(s"before f")
+        f(dstFrm).map { result =>
+          println(s"after f: $result")
+          av_frame_unref(dstFrm)
+          println(s"after av_frame_unref")
+          result
+        }
+      }
   }
 
 trait FFmpegFilterHelper[F[_]: Async]:

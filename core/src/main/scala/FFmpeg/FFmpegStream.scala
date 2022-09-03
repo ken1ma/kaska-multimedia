@@ -66,7 +66,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
             av_packet_unref(pkt)
 
             avcodec_receive_frame(codec_ctx, frm) match // calls av_frame_unref
-              case -35 if (frame_number == 0) =>
+              case -35 if (frame_number == 0) => // FIXME use AVERROR_EAGAIN
                 // bbb_sunflower_2160p_60fps_normal.mp4: the first two calls return ENOMSG
                 // ENOMSG = 35 // No message of the desired type (POSIX.1-2001)
                 Stream.empty
@@ -304,9 +304,6 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
 
       Stream.emit(file)
 
-
-  def filterFrame(srcFrm: AVFrame, filterCtx: FilterContext): Stream[F, Unit] =
-      Stream.emit { filterCtx.filterFrame(srcFrm) }
 
   def scaleFrame(dstFrm: AVFrame, srcFrm: AVFrame, swScaleCtx: SwScaleContext): Stream[F, Unit] =
       Stream.emit { swScaleCtx.scaleFrame(dstFrm, srcFrm) }

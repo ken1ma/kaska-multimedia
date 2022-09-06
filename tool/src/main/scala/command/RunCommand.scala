@@ -20,9 +20,10 @@ import ToolOptions.Commands.RunOpts
 
 class RunCommand[F[_]: Async]:
   def run(exprs: Seq[String], in: Option[String], out: Option[String], opts: RunOpts): F[Unit] =
-    def toVal(opt: Option[String], name: String): Seq[String] =
-        opt.toSeq.map(text => s"""$name = Path.of(s"$text")""")
-    run(toVal(in, "in") ++ toVal(out, "out") ++ exprs, opts)
+    def toVal(opt: Option[String], name: String, createParentDir: Boolean = false): Seq[String] =
+        opt.toSeq.map(text => s"""$name = Path.of(s"$text")""") ++
+        Option.when(createParentDir)(s"""Option($name.getParent).filter(!Files.isDirectory(_)).foreach(Files.createDirectories(_))""").toSeq
+    run(toVal(in, "in") ++ toVal(out, "out", true) ++ exprs, opts)
 
   val imports = """
     import java.nio.file.*

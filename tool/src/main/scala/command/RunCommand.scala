@@ -80,15 +80,15 @@ class RunCommand[F[_]: Async]:
 
     // https://docs.scala-lang.org/scala3/reference/metaprogramming/staging.html
     // https://github.com/scala/scala3-staging.g8/blob/main/src/main/g8/src/main/scala/Main.scala
-/*
     // "org.scala-lang" %% "scala3-staging" % scalaVersion.value,
+/*can't figure out how to parse to Expr[T]
     import scala.quoted._
     import scala.quoted.staging.{run, withQuotes, Compiler}
     given Compiler = Compiler.make(getClass.getClassLoader) // Needed to run or show quotes
     def code(using Quotes): Expr[_] = '{ println("Hello 世界") }
     println(s"code.show = ${withQuotes(code.show)}")
-    val result = staging.run(code)
-    println(s"result = $result")
+    val result0 = staging.run(code)
+    println(s"result0 = $result0")
 */
 
     // https://github.com/com-lihaoyi/Ammonite/blob/master/amm/compiler/src/main/scala-3/ammonite/compiler/Parsers.scala

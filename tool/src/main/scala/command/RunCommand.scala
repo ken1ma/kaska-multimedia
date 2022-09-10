@@ -40,12 +40,23 @@ class RunCommand[F[_]: Async]:
     import jp.ken1ma.kaska.multimedia.tool.command.RunHelper._
 
     import jp.ken1ma.kaska.multimedia.FFmpeg.FFmpegStream
-    val ffmpegStream = FFmpegStream[IO]
-    import ffmpegStream.*
   """
 
+  val header = """
+    |def program[F[_]: Async]: Stream[F, _] = {
+    |  val ffmpegStream = FFmpegStream[F]
+    |  import ffmpegStream.*
+  """.stripMargin.trim
+
+  val footer = """
+    |// TODO Avoid `WARNING: Cats Effect global runtime already initialized; custom configurations will be ignored`
+    |object MyApp extends IOApp.Simple:
+    |  override def run = program[IO].compile.drain
+    |MyApp.main(Array.empty)
+  """.stripMargin.trim
+
   def run(exprs: Seq[String], opts: RunOpts): F[Unit] = async[F] {
-    var indent = 0
+    var indent = 1 // appends an extra `}` matching `{` of `program`
     val lines = exprs.map { expr =>
       // TODO expr.codePointStepper (handle code points rather than characters)
       val s0 = expr.trim // trim any character whose codepoint is less than or equal to 'U+0020' (the space character).
@@ -74,9 +85,12 @@ class RunCommand[F[_]: Async]:
       indented
 
     }
-    val script = (lines ++ (indent - 1 to 0 by -1).map(i => "  " * i + "}")).mkString("\n")
+    val body = (lines ++ (indent - 1 to 0 by -1).map(i => "  " * i + "}")).mkString("\n")
+    val script = s"$header\n$body\n$footer"
     if opts.showScala then
       println(script)
+
+    // TODO opts.showScalaFull
 
     // https://docs.scala-lang.org/scala3/reference/metaprogramming/staging.html
     // https://github.com/scala/scala3-staging.g8/blob/main/src/main/g8/src/main/scala/Main.scala
@@ -121,17 +135,5 @@ class RunCommand[F[_]: Async]:
 
     import dotty.tools.repl.ScriptEngine
     val scriptEngine = new ScriptEngine
-    val result = scriptEngine.eval(s"$imports\n$script", null) // context (2nd argument) is not being used in ScriptEngine
-    val f = result match
-      case stream: Stream[F @unchecked, _] => stream.compile.drain
-      //case f: F[_] @unchecked => f.void
-      case null => // null when there are no expressions (only vals)
-         println(s"No result (null)") // specific message because this is a common mistake
-         Async[F].unit
-      case result =>
-         println(s"The result is $result: ${result.getClass.getName}")
-         Async[F].unit
-    f.await
-
-    // TODO opts.showScalaFull
+    scriptEngine.eval(s"$imports\n$script", null) // context (2nd argument) is not being used in ScriptEngine
   }

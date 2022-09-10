@@ -104,9 +104,11 @@ The program to run is constructed by
 
             tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-scaled.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width / 2, stream.height / 2).flatMap { fileWrite =>" -e "allocSwScaleContextWithDstFrm(stream.width, stream.height, AV_PIX_FMT_YUV420P, stream.width / 2, stream.height / 2, AV_PIX_FMT_YUV420P, logCtx = fmtCtx).flatMap { swScaleCtx =>" -e "streamFrames(stream, fmtCtx).map(_.frm).flatMap(srcFrm => scaleFrame(srcFrm, swScaleCtx)).flatMap(_ => fileWrite(swScaleCtx.dstFrm))" --show-scala
 
-    1. Halve the dimension by filter (FIXME: often times crash, completed at least once as expected)
+    1. Halve the dimension by filter, add time text, only even frames
 
-            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-filtered.h264" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width / 2, stream.height / 2).flatMap { fileWrite =>" -e "allocFilter(s\\u0022scale=\${stream.width / 2}:\${stream.height / 2},drawtext=text='%{pts}':fontfile=data/font/ipaexg.ttf:fontsize=10:fontcolor=red:x=w-tw-10:y=h-th-10\\u0022, stream.width, stream.height, AV_PIX_FMT_YUV420P, stream.time_base.num, stream.time_base.den, stream.sample_aspect_ratio.num, stream.sample_aspect_ratio.den, parentLogCtx = fmtCtx).flatMap { filterCtx =>" -e "streamFrames(stream, fmtCtx).map(_.frm).flatMap(srcFrm => filterCtx.filterFrame(srcFrm, fileWrite))" --show-scala
+            tool/run run -i "$HOME/Downloads/Record of Lodoss War Opening [HD]-kagzOJsHBg4.mp4" -o "out/Lodoss-filtered.h264" -e "timeOffset = Instant.now.getEpochSecond" -e "readFile(in).flatMap { fmtCtx =>" -e "stream = fmtCtx.videoStreams.head" -e "FileWrite.h264(out, stream.width / 2, stream.height / 2).flatMap { fileWrite =>" -e "allocFilter(s\\u0022scale=\${stream.width / 2}:\${stream.height / 2},drawtext=text='%{pts\\\\\\\\:localtime\\\\\\\\:\\u0022 + timeOffset + \\u0022\\\\\\\\:%Y/%m/%d %T}':fontfile=data/font/ipaexg.ttf:fontsize=20:fontcolor=red:x=w-tw-10:y=h-th-10\\u0022, stream.width, stream.height, AV_PIX_FMT_YUV420P, stream.time_base.num, stream.time_base.den, stream.sample_aspect_ratio.num, stream.sample_aspect_ratio.den, parentLogCtx = fmtCtx).flatMap { filterCtx =>" -e "streamFrames(stream, fmtCtx).filter(_.decodeCtx.codec_ctx.frame_number % 2 == 1).map(_.frm).flatMap(srcFrm => filterCtx.filterFrame(srcFrm, fileWrite))" --show-scala
+
+        1. The unescaped drawText is `drawtext=text='%{pts\\:localtime\\:" + timeOffset + "\\:%Y/%m/%d %T}'`
 
 1. Transcode an audio to aac
 

@@ -27,6 +27,7 @@ class RunCommand[F[_]: Async]:
 
   val imports = """
     import java.nio.file.*
+    import java.time.*
     import scala.util.*
     import scala.util.Properties.{userHome => HOME, userName => USER}
     import cats.*

@@ -38,9 +38,9 @@ lazy val tool = (project in file("tool"))
     commonSettings,
     buildInfoSettings,
     libraryDependencies ++= Seq(
-      "com.monovore" %% "decline" % "2.3.0", // command line parser
       "org.scala-lang" %% "scala3-compiler" % scalaVersion.value,
       "org.bytedeco" % "skia-platform" % "2.80.3-1.5.7", // https://mvnrepository.com/artifact/org.bytedeco/skia
+      "com.monovore" %% "decline" % "2.3.0", // command line parser
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.18.0" % Runtime, // log implementation
     ),
     buildInfoPackage := "jp.ken1ma.kaska.multimedia.tool",
@@ -61,7 +61,7 @@ lazy val core = (project in file("core"))
 
       //"org.typelevel" %% "cats-effect" % "3.3.12", // IO monad
       "com.github.rssh" %% "cps-async-connect-cats-effect" % "0.9.10", // https://github.com/rssh/cps-async-connect since it seems well-maintained than https://typelevel.org/cats-effect/docs/std/async-await
-      "co.fs2" %% "fs2-core" % "3.2.12",
+      "co.fs2" %% "fs2-core" % "3.2.14",
 
       "org.log4s" %% "log4s" % "1.10.0", // log api
       "org.apache.logging.log4j" % "log4j-slf4j-impl" % "2.17.2" % Runtime, // log impl

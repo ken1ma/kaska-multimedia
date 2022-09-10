@@ -46,28 +46,28 @@ object FFmpegFilterHelper:
 
     def filterFrame[F[_]: Async, A](srcFrm: AVFrame, f: AVFrame => Stream[F, A]): Stream[F, A] =
       // push the decoded frame into the filtergraph
-      println(s"filterFrame: before av_buffersrc_add_frame_flags")
+      log.trace(s"filterFrame: before av_buffersrc_add_frame_flags")
       av_buffersrc_add_frame_flags(buffersrc_ctx, srcFrm, AV_BUFFERSRC_FLAG_KEEP_REF)
           .throwWhen(_ < 0, s"av_buffersrc_add_frame_flags failed", log, logCtx)
-      println(s"filterFrame: after av_buffersrc_add_frame_flags")
+      log.trace(s"filterFrame: after av_buffersrc_add_frame_flags")
 
       // pull filtered frames from the filtergraph
       Stream.fromBlockingIterator(Iterator.continually {
-        println(s"filterFrame: before av_buffersink_get_frame")
+        log.trace(s"filterFrame: before av_buffersink_get_frame")
         val ret = av_buffersink_get_frame(buffersink_ctx, dstFrm) match
           case 0 => true
           case `AVERROR_EAGAIN` => false
           case ret =>
             ret.throwWhen(_ < 0, s"av_buffersink_get_frame failed", log, logCtx)
             false
-        println(s"after av_buffersink_get_frame: $ret")
+        log.trace(s"after av_buffersink_get_frame: $ret")
         ret
       }.takeWhile(_ == true), chunkSize = 1).flatMap { _ =>
-        println(s"filterFrame: before f")
+        log.trace(s"filterFrame: before f")
         f(dstFrm).map { result =>
-          println(s"filterFrame: after f: $result")
+          log.trace(s"filterFrame: after f: $result")
           av_frame_unref(dstFrm)
-          println(s"filterFrame: after av_frame_unref")
+          log.trace(s"filterFrame: after av_frame_unref")
           result
         }
       }

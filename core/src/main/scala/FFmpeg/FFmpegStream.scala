@@ -65,7 +65,7 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
                 .throwWhen(_ < 0, s"avcodec_send_packet failed", log, logCtx)
             av_packet_unref(pkt)
 
-            println(s"streamFrames: avcodec_receive_frame")
+            log.trace(s"streamFrames: avcodec_receive_frame")
             avcodec_receive_frame(codec_ctx, frm) match // calls av_frame_unref
               case -35 if (frame_number == 0) => // FIXME use AVERROR_EAGAIN
                 // bbb_sunflower_2160p_60fps_normal.mp4: the first two calls return ENOMSG
@@ -154,12 +154,12 @@ class FFmpegStream[F[_]: Async] extends FFmpegFormatHelper[F]
             import encodeCtx.pkt
 
             Stream.emit(frm => Stream.eval(Async[F].delay {
-              println(s"FileWrite: avcodec_send_frame")
+              log.trace(s"FileWrite: avcodec_send_frame")
               avcodec_send_frame(codec_ctx, frm)
                   .throwWhen(_ < 0, s"avcodec_send_frame failed", log, logCtx)
               av_frame_unref(frm) // TODO is this correct?
 
-              println(s"FileWrite: avcodec_receive_packet")
+              log.trace(s"FileWrite: avcodec_receive_packet")
               avcodec_receive_packet(codec_ctx, pkt)
                   .throwWhen(_ < 0, s"avcodec_receive_packet failed", log, logCtx)
 
